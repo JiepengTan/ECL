@@ -8,7 +8,9 @@ namespace LockstepECL {
 
         protected StringBuilder sb = new StringBuilder();
 
-        public void AddCh(char ch){ }
+        public void AddCh(char ch){
+            sb.Append(ch);
+        }
 
         public void Clear(){
             sb.Clear();

@@ -5,35 +5,62 @@ using static LockstepECL.Define;
 
 namespace LockstepECL {
     public class Lex {
-        public const int ALIGN_SET = 0x100; // 强制对齐标志
-        public const int MAXKEY = 1024; // 哈希表容量
-        public Dictionary<string, Token> str2Token = new Dictionary<string, Token>();
-        public List<Token> allTokens; // 单词表
+        public Dictionary<string, Token> str2Token;
+        public List<Token> allTokens;
         public DynString sourcestr;
         public DynString tkstr;
         public object tkvalue;
         public char curChar;
         public int curTokenId;
         public int lineNum;
+        public int colNum = 0;
+        public string fileName="";
 
 
-        InputStream input = new InputStream();
-        public Action<char> FuncDealSpace;
+        private Action<char> FuncDealSpace;
+        private Action<char> FuncUnChar;
+        private Func<char> FuncGetChar;
+
         private const char CH_EOF = '\0';
 
-        void UnChar(char ch){
-            input.ungetc(ch);
+        public override string ToString(){
+            return $"line:{lineNum} col:{colNum} ch:{curChar} id:{curTokenId} tkstr:{tkstr.data}";
         }
-        void GetChar(){
-            curChar = input.getc(); //文件尾返回EOF，其它返回实际字节值		
+
+        public void UnChar(char ch){
+            FuncUnChar(ch);
+            --colNum;
+        }
+
+        public void GetChar(){
+            curChar = FuncGetChar(); //文件尾返回EOF，其它返回实际字节值		
+            ++colNum;
+        }
+
+
+        public void Init(Func<char> funcGetChar, Action<char> funcUnChar, Action<char> funcDealSpace){
+            ErrorHandler.curLex = this;
+            this.FuncUnChar = funcUnChar;
+            this.FuncGetChar = funcGetChar;
+            this.FuncDealSpace = funcDealSpace;
+            str2Token = new Dictionary<string, Token>();
+            allTokens = new List<Token>();
+            sourcestr = new DynString();
+            tkstr = new DynString();
+
+            allTokens.AddRange(keywords);
+            for (int i = 0; i < keywords.Length; i++) {
+                str2Token.Add(keywords[i].name, keywords[i]);
+            }
         }
 
         public static void Expect(string msg){
-            Error("缺少 "+ msg);
+            Error("缺少 " + msg);
         }
+
         void SkipToken(int v){
             if (curTokenId != v)
-                Error("缺少"+ GetTokenName(v));
+                Error("缺少" + GetTokenName(v));
             GetToken();
         }
 
@@ -48,11 +75,7 @@ namespace LockstepECL {
         Token InsertToken(string p){
             var tp = FindToken(p);
             if (tp == null) {
-                tp = new Token();
-                tp.name = p;
-                tp.symIdentifier = null;
-                tp.symStruct = null;
-                tp.id = allTokens.Count;
+                tp = new Token {name = p, id = allTokens.Count};
                 allTokens.Add(tp);
                 str2Token.Add(p, tp);
             }
@@ -79,6 +102,7 @@ namespace LockstepECL {
                 tkstr.AddCh(curChar);
                 GetChar();
             }
+
             return InsertToken(tkstr.data);
         }
 
@@ -152,9 +176,9 @@ namespace LockstepECL {
                         default:
                             c = curChar;
                             if (c >= '!' && c <= '~')
-                                Warning($"非法转义字符: \'\\{c}\'"); // 33-126 0x21-0x7E可显示字符部分
+                                Warning($"Illegal escape character: \'\\{c}\'"); // 33-126 0x21-0x7E可显示字符部分
                             else
-                                Warning($"非法转义字符: \'\\{c}\'");
+                                Warning($"Illegal escape character: \'\\{c}\'");
                             break;
                     }
 
@@ -174,13 +198,19 @@ namespace LockstepECL {
         }
 
         void ParseSpace(){
-            while (curChar == ' ' || curChar == '\t' || curChar == '\r') // 忽略空格,和TAB ch =='\n' ||
+            while (curChar == ' ' || curChar == '\t' || curChar == '\r' || curChar == '\n') // 忽略空格,和TAB ch =='\n' ||
             {
                 if (curChar == '\r') {
                     GetChar();
                     if (curChar != '\n')
                         return;
                     lineNum++;
+                    colNum = 0;
+                }
+
+                if (curChar == '\n') {
+                    lineNum++;
+                    colNum = 0;
                 }
 
                 FuncDealSpace(curChar); //这句话，决定是否打印空格，如果不输出空格，源码中空格将被去掉，所有源码挤在一起
@@ -189,16 +219,9 @@ namespace LockstepECL {
         }
 
 
-        public void Init(){
-            allTokens.AddRange(keywords);
-            for (int i = 0; i < keywords.Length; i++) {
-                str2Token.Add(keywords[i].name, keywords[i]);
-            }
-        }
-
         void Preprocess(){
             while (true) {
-                if (curChar == ' ' || curChar == '\t' || curChar == '\r')
+                if (curChar == ' ' || curChar == '\t' || curChar == '\r' || curChar == '\n')
                     ParseSpace();
                 else if (curChar == '/') {
                     //向前多读一个字节看是否是注释开始符，猜错了把多读的字符再放回去
@@ -240,7 +263,7 @@ namespace LockstepECL {
                     }
                 }
                 else {
-                    Error("一直到文件尾未看到配对的注释结束符");
+                    Error("Miss common character * or //");
                     return;
                 }
             } while (true);
@@ -359,7 +382,7 @@ namespace LockstepECL {
                         GetChar();
                     }
                     else
-                        Error("暂不支持'!'(非操作符)");
+                        Error("Unknown character" + "!");
 
                     break;
                 case '<':
@@ -387,7 +410,7 @@ namespace LockstepECL {
                     if (curChar == '.') {
                         GetChar();
                         if (curChar != '.')
-                            Error("省略号拼写错误");
+                            Error("Unknown character " + curChar);
                         else
                             curTokenId = TK_ELLIPSIS;
                         GetChar();
@@ -451,7 +474,7 @@ namespace LockstepECL {
                     curTokenId = TK_EOF;
                     break;
                 default:
-                    Error($"不认识的字符:{curChar}"); //上面字符以外的字符，只允许出现在源码字符串，不允许出现的源码的其它位置
+                    Error($"Unknown character:{curChar}"); //上面字符以外的字符，只允许出现在源码字符串，不允许出现的源码的其它位置
                     GetChar();
                     break;
             }

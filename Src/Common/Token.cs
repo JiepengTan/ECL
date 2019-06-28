@@ -18,5 +18,9 @@ namespace LockstepECL {
             this.symStruct = symStruct;
             this.symIdentifier = sym_identifier;
         }
+
+        public override string ToString(){
+            return "" + id + " : " + name;
+        }
     }
 }

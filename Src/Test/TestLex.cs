@@ -1,27 +1,39 @@
 using System;
+using System.IO;
 
 namespace LockstepECL {
     public class TestLex {
+        InputStream input = new InputStream();
         protected Lex lex = new Lex();
         private int syntax_level;
         private int syntax_state;
         public int SNTX_NUL = 0;
 
-        public void Init(){
+        private ConsoleColor defaultColor;
+        public void Init(string path){
+            var text = File.ReadAllText(path).Replace("\r\n","\n").Replace("\r","\n");
+            defaultColor = Console.ForegroundColor;
+            input.Init(text);
             lex.lineNum = 1;
-            lex.Init();
+            lex.fileName = path;
+            lex.Init(input.GetChar, input.UnChar, OnSpace);
 
             syntax_state = SNTX_NUL;
             syntax_level = 0;
         }
+        void OnSpace(char ch){
+            Output(ch);
+        }
 
-        public void Test(){
+        public void DumpContext(){
+            lex.GetChar();
             do {
                 lex.GetToken();
                 ColorToken(ELexState.LEX_NORMAL);
             } while (lex.curTokenId != Define.TK_EOF);
 
-            Console.WriteLine($"\n代码行数: {ErrorHandler.line_num}行\n");
+            Console.ForegroundColor = defaultColor;
+            //Output($"\nTotalLineCount: {lex.lineNum}\n");
         }
 
         void ColorToken(ELexState lex_state){
@@ -29,15 +41,17 @@ namespace LockstepECL {
             switch (lex_state) {
                 case ELexState.LEX_NORMAL: {
                     if (lex.curTokenId >= Define.TK_IDENT)
-                        SetConsoleTextAttribute(ConsoleColor.Gray);
+                        SetConsoleTextAttribute(ConsoleColor.Gray,defaultColor);
                     else if (lex.curTokenId >= Define.KW_CHAR)
-                        SetConsoleTextAttribute(ConsoleColor.Green, ConsoleColor.Black);
+                        SetConsoleTextAttribute(ConsoleColor.Green, defaultColor);
                     else if (lex.curTokenId >= Define.TK_CINT)
-                        SetConsoleTextAttribute(ConsoleColor.Red, ConsoleColor.Green);
+                        SetConsoleTextAttribute(ConsoleColor.Red, defaultColor);
                     else
-                        SetConsoleTextAttribute(ConsoleColor.Red, ConsoleColor.Gray);
+                        SetConsoleTextAttribute(ConsoleColor.Red, defaultColor);
                     p = lex.GetTokenName(lex.curTokenId);
-                    Output(p);
+                    if (lex.curTokenId != Define.TK_EOF) {
+                        Output(p);
+                    }
                     break;
                 }
                 case ELexState.LEX_SEP:
@@ -47,7 +61,6 @@ namespace LockstepECL {
         }
 
         void SetConsoleTextAttribute(ConsoleColor fgColor, ConsoleColor bgColor = ConsoleColor.Black){
-            Console.BackgroundColor = bgColor;
             Console.ForegroundColor = fgColor;
         }
 
