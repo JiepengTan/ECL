@@ -4,7 +4,7 @@ using System.IO;
 namespace LockstepECL {
     internal class Program {
         public static void Main(string[] args){
-            //TestLex();
+            TestLex();
             TestGrammar();
         }
 

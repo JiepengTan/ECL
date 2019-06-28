@@ -219,7 +219,7 @@ namespace LockstepECL {
                     OnReadLine();
                 }
 
-                //FuncDealSpace(curChar); //这句话，决定是否打印空格，如果不输出空格，源码中空格将被去掉，所有源码挤在一起
+                FuncDealSpace?.Invoke(curChar); //这句话，决定是否打印空格，如果不输出空格，源码中空格将被去掉，所有源码挤在一起
                 GetChar();
             }
         }

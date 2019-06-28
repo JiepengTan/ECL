@@ -19,7 +19,6 @@ namespace LockstepECL {
             lex.lineNum = 1;
             lex.fileName = path;
             lex.Init(input.GetChar, input.UnChar, OnSpace);
-
             lex.FuncSyntaxIndent = SyntaxIndent;
         }
 
@@ -33,7 +32,7 @@ namespace LockstepECL {
             //Output($"\nTotalLineCount: {lex.lineNum}\n");
         }
 
-        protected void OnSpace(char ch){
+        protected virtual void OnSpace(char ch){
             Output(ch);
         }
 
