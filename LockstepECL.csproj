@@ -40,8 +40,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Src\Common\Define.cs" />
+    <Compile Include="Src\Common\Enums\EErrorLevel.cs" />
+    <Compile Include="Src\Common\Enums\ELexState.cs" />
+    <Compile Include="Src\Common\Enums\EStorageClass.cs" />
+    <Compile Include="Src\Common\Enums\ESynTaxState.cs" />
+    <Compile Include="Src\Common\Enums\ETypeCode.cs" />
+    <Compile Include="Src\Common\Enums\EWorkStage.cs" />
+    <Compile Include="Src\Common\Symbol.cs" />
+    <Compile Include="Src\Common\Token.cs" />
     <Compile Include="Src\Define\EKeyWord.cs" />
-    <Compile Include="Src\Lex\e_TokenCode.cs" />
+    <Compile Include="Src\Lex\DynString.cs" />
+    <Compile Include="Src\Lex\InputStream.cs" />
+    <Compile Include="Src\Test\TestLex.cs" />
     <Compile Include="Src\Util\Error.cs" />
     <Compile Include="Src\Util\Tools.cs" />
     <Compile Include="Src\Lex\Lex.cs" />
