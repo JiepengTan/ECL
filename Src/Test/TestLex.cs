@@ -1,47 +1,48 @@
 using System;
 using System.IO;
+using static LockstepECL.Define;
+using static LockstepECL.ESynTaxState;
+
+using static LockstepECL.ESynTaxState;
 
 namespace LockstepECL {
     public class TestLex {
-        InputStream input;
+        protected InputStream input;
         protected Lex lex = new Lex();
-        private int syntax_level;
-        private int syntax_state;
-        public int SNTX_NUL = 0;
 
-        private ConsoleColor defaultColor;
-        public void Init(string path){
-            var text = File.ReadAllText(path).Replace("\r\n","\n").Replace("\r","\n");
+        protected ConsoleColor defaultColor;
+
+        public virtual void Init(string path){
+            var text = File.ReadAllText(path).Replace("\r\n", "\n").Replace("\r", "\n");
             defaultColor = Console.ForegroundColor;
             input = new InputStream(text);
             lex.lineNum = 1;
             lex.fileName = path;
             lex.Init(input.GetChar, input.UnChar, OnSpace);
 
-            syntax_state = SNTX_NUL;
-            syntax_level = 0;
-        }
-        void OnSpace(char ch){
-            Output(ch);
+            lex.FuncSyntaxIndent = SyntaxIndent;
         }
 
-        public void DumpContext(){
+        public void ShowLexResult(){
             lex.GetChar();
             do {
                 lex.GetToken();
-                ColorToken(ELexState.LEX_NORMAL);
             } while (lex.curTokenId != Define.TK_EOF);
 
             Console.ForegroundColor = defaultColor;
             //Output($"\nTotalLineCount: {lex.lineNum}\n");
         }
 
-        void ColorToken(ELexState lex_state){
+        protected void OnSpace(char ch){
+            Output(ch);
+        }
+
+        protected void ColorToken(ELexState lex_state){
             string p;
             switch (lex_state) {
                 case ELexState.LEX_NORMAL: {
                     if (lex.curTokenId >= Define.TK_IDENT)
-                        SetConsoleTextAttribute(ConsoleColor.Gray,defaultColor);
+                        SetConsoleTextAttribute(ConsoleColor.Gray, defaultColor);
                     else if (lex.curTokenId >= Define.KW_CHAR)
                         SetConsoleTextAttribute(ConsoleColor.Green, defaultColor);
                     else if (lex.curTokenId >= Define.TK_CINT)
@@ -52,6 +53,7 @@ namespace LockstepECL {
                     if (lex.curTokenId != Define.TK_EOF) {
                         Output(p);
                     }
+
                     break;
                 }
                 case ELexState.LEX_SEP:
@@ -60,16 +62,44 @@ namespace LockstepECL {
             }
         }
 
-        void SetConsoleTextAttribute(ConsoleColor fgColor, ConsoleColor bgColor = ConsoleColor.Black){
+        protected void SetConsoleTextAttribute(ConsoleColor fgColor, ConsoleColor bgColor = ConsoleColor.Black){
             Console.ForegroundColor = fgColor;
         }
 
-        public void Output(string str){
+        protected void Output(string str){
             Console.Write(str);
         }
 
-        public void Output(char ch){
+        protected void Output(char ch){
             Console.Write(ch);
+        }
+        void OutputTab(int n){
+            int i = 0;
+            for (; i < n; i++)
+                Output("    ");
+        }
+        void SyntaxIndent(){
+            switch (lex.syntax_state) {
+                case SNTX_NUL:
+                    ColorToken(ELexState.LEX_NORMAL);
+                    break;
+                case SNTX_SP:
+                    Output(" ");
+                    ColorToken(ELexState.LEX_NORMAL);
+                    break;
+                case SNTX_LF_HT: {
+                    if (lex.curTokenId == TK_END) // 遇到'}',缩进减少一级
+                        lex.syntax_level--;
+                    Output("\n");
+                    OutputTab(lex.syntax_level);
+                }
+                    ColorToken(ELexState.LEX_NORMAL);
+                    break;
+                case SNTX_DELAY:
+                    break;
+            }
+
+            lex.syntax_state = SNTX_NUL;
         }
     }
 }

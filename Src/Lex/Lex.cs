@@ -4,7 +4,7 @@ using static ErrorHandler;
 using static LockstepECL.Define;
 
 namespace LockstepECL {
-    public class Lex {
+    public partial class Lex {
         public Dictionary<string, Token> str2Token;
         public List<Token> allTokens;
         public DynString sourcestr;
@@ -17,7 +17,9 @@ namespace LockstepECL {
         public string fileName="";
         private bool hasTokenInLine = false;// cur line has some identifier 
 
-
+        public Token __debugToken {
+            get { return allTokens[curTokenId]; }
+        }
         private Action<char> FuncDealSpace;
         private Action<char> FuncUnChar;
         private Func<char> FuncGetChar;
@@ -64,7 +66,7 @@ namespace LockstepECL {
             Error("miss " + msg);
         }
 
-        void SkipToken(int v){
+        public  void SkipToken(int v){
             if (curTokenId != v)
                 Error("miss " + GetTokenName(v));
             GetToken();
@@ -217,7 +219,7 @@ namespace LockstepECL {
                     OnReadLine();
                 }
 
-                FuncDealSpace(curChar); //这句话，决定是否打印空格，如果不输出空格，源码中空格将被去掉，所有源码挤在一起
+                //FuncDealSpace(curChar); //这句话，决定是否打印空格，如果不输出空格，源码中空格将被去掉，所有源码挤在一起
                 GetChar();
             }
         }
@@ -500,8 +502,9 @@ namespace LockstepECL {
                     GetChar();
                     break;
             }
+            syntax_indent();
         }
-
+        
         public string GetTokenName(int v){
             if (v > allTokens.Count)
                 return null;

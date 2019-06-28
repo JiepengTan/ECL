@@ -2,50 +2,50 @@ namespace LockstepECL {
     public class Define {
         /* 运算符及分隔符 */
 
-        public static int TK_PLUS = 0;
-        public static int TK_MINUS = 1;
-        public static int TK_STAR = 2;
-        public static int TK_DIVIDE = 3;
-        public static int TK_MOD = 4;
-        public static int TK_EQ = 5;
-        public static int TK_NEQ = 6;
-        public static int TK_LT = 7;
-        public static int TK_LEQ = 8;
-        public static int TK_GT = 9;
-        public static int TK_GEQ = 10;
-        public static int TK_ASSIGN = 11;
-        public static int TK_POINTSTO = 12;
-        public static int TK_DOT = 13;
-        public static int TK_AND = 14;
-        public static int TK_OPENPA = 15;
-        public static int TK_CLOSEPA = 16;
-        public static int TK_OPENBR = 17;
-        public static int TK_CLOSEBR = 18;
-        public static int TK_BEGIN = 19;
-        public static int TK_END = 20;
-        public static int TK_SEMICOLON = 21;
-        public static int TK_COMMA = 22;
-        public static int TK_ELLIPSIS = 23;
-        public static int TK_EOF = 24;
-        public static int TK_CINT = 25;
-        public static int TK_CCHAR = 26;
-        public static int TK_CSTR = 27;
-        public static int KW_CHAR = 28;
-        public static int KW_SHORT = 29;
-        public static int KW_INT = 30;
-        public static int KW_VOID = 31;
-        public static int KW_STRUCT = 32;
-        public static int KW_IF = 33;
-        public static int KW_ELSE = 34;
-        public static int KW_FOR = 35;
-        public static int KW_CONTINUE = 36;
-        public static int KW_BREAK = 37;
-        public static int KW_RETURN = 38;
-        public static int KW_SIZEOF = 39;
-        public static int KW_ALIGN = 40;
-        public static int KW_CDECL = 41;
-        public static int KW_STDCALL = 42;
-        public static int TK_IDENT = 43;
+        public const int TK_PLUS = 0;
+        public const int TK_MINUS = 1;
+        public const int TK_STAR = 2;
+        public const int TK_DIVIDE = 3;
+        public const int TK_MOD = 4;
+        public const int TK_EQ = 5;
+        public const int TK_NEQ = 6;
+        public const int TK_LT = 7;
+        public const int TK_LEQ = 8;
+        public const int TK_GT = 9;
+        public const int TK_GEQ = 10;
+        public const int TK_ASSIGN = 11;
+        public const int TK_POINTSTO = 12;
+        public const int TK_DOT = 13;
+        public const int TK_AND = 14;
+        public const int TK_OPENPA = 15;
+        public const int TK_CLOSEPA = 16;
+        public const int TK_OPENBR = 17;
+        public const int TK_CLOSEBR = 18;
+        public const int TK_BEGIN = 19;
+        public const int TK_END = 20;
+        public const int TK_SEMICOLON = 21;
+        public const int TK_COMMA = 22;
+        public const int TK_ELLIPSIS = 23;
+        public const int TK_EOF = 24;
+        public const int TK_CINT = 25;
+        public const int TK_CCHAR = 26;
+        public const int TK_CSTR = 27;
+        public const int KW_CHAR = 28;
+        public const int KW_SHORT = 29;
+        public const int KW_INT = 30;
+        public const int KW_VOID = 31;
+        public const int KW_STRUCT = 32;
+        public const int KW_IF = 33;
+        public const int KW_ELSE = 34;
+        public const int KW_FOR = 35;
+        public const int KW_CONTINUE = 36;
+        public const int KW_BREAK = 37;
+        public const int KW_RETURN = 38;
+        public const int KW_SIZEOF = 39;
+        public const int KW_ALIGN = 40;
+        public const int KW_CDECL = 41;
+        public const int KW_STDCALL = 42;
+        public const int TK_IDENT = 43;
 
         private static int NumOfToken = 43;
 
@@ -62,7 +62,7 @@ namespace LockstepECL {
             new Token(TK_GT, null, ">", null, null),
             new Token(TK_GEQ, null, ">=", null, null),
             new Token(TK_ASSIGN, null, "=", null, null),
-            new Token(TK_POINTSTO, null, "_.__", null, null),//TODO 去重复
+            new Token(TK_POINTSTO, null, "__.___", null, null),//TODO 去重复
             new Token(TK_DOT, null, ".", null, null),
             new Token(TK_AND, null, "", null, null),
             new Token(TK_OPENPA, null, "(", null, null),

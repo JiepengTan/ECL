@@ -50,8 +50,10 @@
     <Compile Include="Src\Common\Symbol.cs" />
     <Compile Include="Src\Common\Token.cs" />
     <Compile Include="Src\Define\EKeyWord.cs" />
+    <Compile Include="Src\Grammar\Grammar.cs" />
     <Compile Include="Src\Lex\DynString.cs" />
     <Compile Include="Src\Lex\InputStream.cs" />
+    <Compile Include="Src\Test\TestGrammar.cs" />
     <Compile Include="Src\Test\TestLex.cs" />
     <Compile Include="Src\Util\Error.cs" />
     <Compile Include="Src\Util\Tools.cs" />
@@ -61,25 +63,27 @@
   <ItemGroup>
     <Content Include="Src\Define\ECL_Syntax.txt" />
     <Content Include="Src\Define\Lua_Syntax.txt" />
-    <Content Include="Src\_Prepare\Debug\HelloWorld.c" />
-    <Content Include="Src\_Prepare\Debug\scc.exe" />
-    <Content Include="Src\_Prepare\demo\color_token_demo.bat" />
-    <Content Include="Src\_Prepare\demo\color_token_demo.c" />
-    <Content Include="Src\_Prepare\demo\HelloWorld.bat" />
-    <Content Include="Src\_Prepare\demo\HelloWorld.c" />
-    <Content Include="Src\_Prepare\demo\scc.exe" />
-    <Content Include="Src\_Prepare\dynarray.c" />
-    <Content Include="Src\_Prepare\dynstring.c" />
-    <Content Include="Src\_Prepare\error.c" />
-    <Content Include="Src\_Prepare\lex.c" />
-    <Content Include="Src\_Prepare\Release\HelloWorld.c" />
-    <Content Include="Src\_Prepare\Release\scc.exe" />
-    <Content Include="Src\_Prepare\scc.c" />
-    <Content Include="Src\_Prepare\scc.dsp" />
-    <Content Include="Src\_Prepare\scc.dsw" />
-    <Content Include="Src\_Prepare\scc.h" />
-    <Content Include="Src\_Prepare\scc.ncb" />
-    <Content Include="Src\_Prepare\scc.opt" />
+    <Content Include="Src\Define\SC_Syntax.txt" />
+    <Content Include="Src\_Prepare\scc_syntax\Debug\HelloWorld.c" />
+    <Content Include="Src\_Prepare\scc_syntax\Debug\scc.exe" />
+    <Content Include="Src\_Prepare\scc_syntax\demo\HelloWorld.bat" />
+    <Content Include="Src\_Prepare\scc_syntax\demo\HelloWorld.c" />
+    <Content Include="Src\_Prepare\scc_syntax\demo\scc.exe" />
+    <Content Include="Src\_Prepare\scc_syntax\demo\syntax_indent_demo.bat" />
+    <Content Include="Src\_Prepare\scc_syntax\demo\syntax_indent_demo.c" />
+    <Content Include="Src\_Prepare\scc_syntax\dynarray.c" />
+    <Content Include="Src\_Prepare\scc_syntax\dynstring.c" />
+    <Content Include="Src\_Prepare\scc_syntax\error.c" />
+    <Content Include="Src\_Prepare\scc_syntax\grammar.c" />
+    <Content Include="Src\_Prepare\scc_syntax\lex.c" />
+    <Content Include="Src\_Prepare\scc_syntax\Release\HelloWorld.c" />
+    <Content Include="Src\_Prepare\scc_syntax\Release\scc.exe" />
+    <Content Include="Src\_Prepare\scc_syntax\scc.c" />
+    <Content Include="Src\_Prepare\scc_syntax\scc.dsp" />
+    <Content Include="Src\_Prepare\scc_syntax\scc.dsw" />
+    <Content Include="Src\_Prepare\scc_syntax\scc.h" />
+    <Content Include="Src\_Prepare\scc_syntax\scc.ncb" />
+    <Content Include="Src\_Prepare\scc_syntax\scc.opt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
