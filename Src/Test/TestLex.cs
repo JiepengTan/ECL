@@ -3,7 +3,7 @@ using System.IO;
 
 namespace LockstepECL {
     public class TestLex {
-        InputStream input = new InputStream();
+        InputStream input;
         protected Lex lex = new Lex();
         private int syntax_level;
         private int syntax_state;
@@ -13,7 +13,7 @@ namespace LockstepECL {
         public void Init(string path){
             var text = File.ReadAllText(path).Replace("\r\n","\n").Replace("\r","\n");
             defaultColor = Console.ForegroundColor;
-            input.Init(text);
+            input = new InputStream(text);
             lex.lineNum = 1;
             lex.fileName = path;
             lex.Init(input.GetChar, input.UnChar, OnSpace);

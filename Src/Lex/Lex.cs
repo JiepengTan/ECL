@@ -15,6 +15,7 @@ namespace LockstepECL {
         public int lineNum;
         public int colNum = 0;
         public string fileName="";
+        private bool hasTokenInLine = false;// cur line has some identifier 
 
 
         private Action<char> FuncDealSpace;
@@ -24,7 +25,7 @@ namespace LockstepECL {
         private const char CH_EOF = '\0';
 
         public override string ToString(){
-            return $"line:{lineNum} col:{colNum} ch:{curChar} id:{curTokenId} tkstr:{tkstr.data}";
+            return $"line:{lineNum} col:{colNum} ch:{curChar} id:{curTokenId} tkstr:{tkstr.Data}";
         }
 
         public void UnChar(char ch){
@@ -37,6 +38,11 @@ namespace LockstepECL {
             ++colNum;
         }
 
+        void OnReadLine(){
+            hasTokenInLine = false;
+            colNum = 0;
+            lineNum++;
+        }
 
         public void Init(Func<char> funcGetChar, Action<char> funcUnChar, Action<char> funcDealSpace){
             ErrorHandler.curLex = this;
@@ -55,12 +61,12 @@ namespace LockstepECL {
         }
 
         public static void Expect(string msg){
-            Error("缺少 " + msg);
+            Error("miss " + msg);
         }
 
         void SkipToken(int v){
             if (curTokenId != v)
-                Error("缺少" + GetTokenName(v));
+                Error("miss " + GetTokenName(v));
             GetToken();
         }
 
@@ -103,7 +109,7 @@ namespace LockstepECL {
                 GetChar();
             }
 
-            return InsertToken(tkstr.data);
+            return InsertToken(tkstr.Data);
         }
 
         void ParseNumber(){
@@ -123,7 +129,7 @@ namespace LockstepECL {
                 } while (IsDigit(curChar));
             }
 
-            tkvalue = int.Parse(tkstr.data);
+            tkvalue = int.Parse(tkstr.Data);
         }
 
         void ParseString(char sep){
@@ -176,7 +182,7 @@ namespace LockstepECL {
                         default:
                             c = curChar;
                             if (c >= '!' && c <= '~')
-                                Warning($"Illegal escape character: \'\\{c}\'"); // 33-126 0x21-0x7E可显示字符部分
+                                Warning($"Illegal escape character: \'\\{c}\'"); 
                             else
                                 Warning($"Illegal escape character: \'\\{c}\'");
                             break;
@@ -204,13 +210,11 @@ namespace LockstepECL {
                     GetChar();
                     if (curChar != '\n')
                         return;
-                    lineNum++;
-                    colNum = 0;
+                    OnReadLine();
                 }
 
                 if (curChar == '\n') {
-                    lineNum++;
-                    colNum = 0;
+                    OnReadLine();
                 }
 
                 FuncDealSpace(curChar); //这句话，决定是否打印空格，如果不输出空格，源码中空格将被去掉，所有源码挤在一起
@@ -227,7 +231,10 @@ namespace LockstepECL {
                     //向前多读一个字节看是否是注释开始符，猜错了把多读的字符再放回去
                     GetChar();
                     if (curChar == '*') {
-                        ParseComment();
+                        ParseCommentCStyle();
+                    }
+                    else if (curChar == '/') {
+                        ParseCommentCppStyle();
                     }
                     else {
                         UnChar(curChar); //把一个字符退回到输入流中
@@ -240,8 +247,22 @@ namespace LockstepECL {
             }
         }
 
+        private void ParseCommentCppStyle(){
+            
+            while (curChar != '\n') {
+                GetChar();
+            }
 
-        void ParseComment(){
+            if (hasTokenInLine) {
+                FuncDealSpace(curChar);
+            }
+
+            OnReadLine();
+            GetChar();
+        }
+
+
+        void ParseCommentCStyle(){
             GetChar();
             do {
                 do {
@@ -252,7 +273,7 @@ namespace LockstepECL {
                 } while (true);
 
                 if (curChar == '\n') {
-                    lineNum++;
+                    OnReadLine();
                     GetChar();
                 }
                 else if (curChar == '*') {
@@ -271,6 +292,7 @@ namespace LockstepECL {
 
         public void GetToken(){
             Preprocess();
+            hasTokenInLine = true;
             switch (curChar) {
                 case 'a':
                 case 'b':
@@ -463,7 +485,7 @@ namespace LockstepECL {
                 case '\'':
                     ParseString(curChar);
                     curTokenId = TK_CCHAR;
-                    tkvalue = tkstr.data;
+                    tkvalue = tkstr.Data;
                     break;
                 case '\"': {
                     ParseString(curChar);
@@ -484,7 +506,7 @@ namespace LockstepECL {
             if (v > allTokens.Count)
                 return null;
             else if (v >= TK_CINT && v <= TK_CSTR)
-                return sourcestr.data;
+                return sourcestr.Data;
             else
                 return (allTokens[v]).name;
         }

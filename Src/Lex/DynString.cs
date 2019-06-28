@@ -2,18 +2,16 @@ using System.Text;
 
 namespace LockstepECL {
     public class DynString {
-        public string data {
-            get { return sb.ToString(); }
-        } // 指向字符串的指针  ss
+        public string Data => _sb.ToString();
 
-        protected StringBuilder sb = new StringBuilder();
+        private StringBuilder _sb = new StringBuilder();
 
         public void AddCh(char ch){
-            sb.Append(ch);
+            _sb.Append(ch);
         }
 
         public void Clear(){
-            sb.Clear();
+            _sb.Clear();
         }
     }
 }

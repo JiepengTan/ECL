@@ -2,25 +2,25 @@ using System.IO;
 
 namespace LockstepECL {
     public class InputStream {
-        public string text;
-        public int size;
-        public int idx;
+        private string _text;
+        private int _size;
+        private int _idx;
 
-        public void Init(string text){
-            this.text = text;
-            size = text.Length;
-            idx = 0;
+        public InputStream(string text){
+            this._text = text;
+            _size = text.Length;
+            _idx = 0;
         }
 
         public  void UnChar(char ch){
-            --idx;
+            --_idx;
         }
 
         public  char GetChar(){
-            if (idx >= size) {
+            if (_idx >= _size) {
                 return '\0';
             }
-            return text[idx++];
+            return _text[_idx++];
         }
     }
 }
