@@ -9,6 +9,7 @@ Jenny/
 .vs/
 bin/
 *.db
+_Prepare/
 
 #VS ignore
 # Build and Object Folders  

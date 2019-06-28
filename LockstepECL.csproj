@@ -11,6 +11,7 @@
     <AssemblyName>LockstepECL</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -39,12 +40,35 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Src\EKeyWord.cs" />
+    <Compile Include="Src\Define\EKeyWord.cs" />
+    <Compile Include="Src\Lex\e_TokenCode.cs" />
+    <Compile Include="Src\Util\Error.cs" />
+    <Compile Include="Src\Util\Tools.cs" />
+    <Compile Include="Src\Lex\Lex.cs" />
     <Compile Include="Src\Program.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Src\ECL_Syntax.txt" />
-    <Content Include="Src\Lua_Syntax.txt" />
+    <Content Include="Src\Define\ECL_Syntax.txt" />
+    <Content Include="Src\Define\Lua_Syntax.txt" />
+    <Content Include="Src\_Prepare\Debug\HelloWorld.c" />
+    <Content Include="Src\_Prepare\Debug\scc.exe" />
+    <Content Include="Src\_Prepare\demo\color_token_demo.bat" />
+    <Content Include="Src\_Prepare\demo\color_token_demo.c" />
+    <Content Include="Src\_Prepare\demo\HelloWorld.bat" />
+    <Content Include="Src\_Prepare\demo\HelloWorld.c" />
+    <Content Include="Src\_Prepare\demo\scc.exe" />
+    <Content Include="Src\_Prepare\dynarray.c" />
+    <Content Include="Src\_Prepare\dynstring.c" />
+    <Content Include="Src\_Prepare\error.c" />
+    <Content Include="Src\_Prepare\lex.c" />
+    <Content Include="Src\_Prepare\Release\HelloWorld.c" />
+    <Content Include="Src\_Prepare\Release\scc.exe" />
+    <Content Include="Src\_Prepare\scc.c" />
+    <Content Include="Src\_Prepare\scc.dsp" />
+    <Content Include="Src\_Prepare\scc.dsw" />
+    <Content Include="Src\_Prepare\scc.h" />
+    <Content Include="Src\_Prepare\scc.ncb" />
+    <Content Include="Src\_Prepare\scc.opt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
