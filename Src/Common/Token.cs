@@ -8,7 +8,6 @@ namespace LockstepECL {
         public Token(){ }
         public Token(
             int id,
-            Token next,
             string name,
             Symbol symStruct,
             Symbol sym_identifier

@@ -61,6 +61,8 @@
     <Compile Include="Src\Program.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="data\HelloWorld.c" />
+    <Content Include="data\SyntaxIndent.c" />
     <Content Include="Src\Define\ECL_Syntax.txt" />
     <Content Include="Src\Define\Lua_Syntax.txt" />
     <Content Include="Src\Define\SC_Syntax.txt" />

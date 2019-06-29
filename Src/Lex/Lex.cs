@@ -14,12 +14,13 @@ namespace LockstepECL {
         public int curTokenId;
         public int lineNum;
         public int colNum = 0;
-        public string fileName="";
-        private bool hasTokenInLine = false;// cur line has some identifier 
+        public string fileName = "";
+        private bool hasTokenInLine = false; // cur line has some identifier 
 
         public Token __debugToken {
             get { return allTokens[curTokenId]; }
         }
+
         private Action<char> FuncDealSpace;
         private Action<char> FuncUnChar;
         private Func<char> FuncGetChar;
@@ -66,7 +67,7 @@ namespace LockstepECL {
             Error("miss " + msg);
         }
 
-        public  void SkipToken(int v){
+        public void SkipToken(int v){
             if (curTokenId != v)
                 Error("miss " + GetTokenName(v));
             GetToken();
@@ -114,7 +115,7 @@ namespace LockstepECL {
             return InsertToken(tkstr.Data);
         }
 
-        void ParseNumber(){
+        bool ParseNumber(){
             tkstr.Clear();
             sourcestr.Clear();
             do {
@@ -123,7 +124,9 @@ namespace LockstepECL {
                 GetChar();
             } while (IsDigit(curChar));
 
+            bool isFloat = false;
             if (curChar == '.') {
+                isFloat = true;
                 do {
                     tkstr.AddCh(curChar);
                     sourcestr.AddCh(curChar);
@@ -131,7 +134,14 @@ namespace LockstepECL {
                 } while (IsDigit(curChar));
             }
 
-            tkvalue = int.Parse(tkstr.Data);
+            if (isFloat) {
+                tkvalue = (float)double.Parse(tkstr.Data);
+            }
+            else {
+                tkvalue = int.Parse(tkstr.Data);
+            }
+
+            return isFloat;
         }
 
         void ParseString(char sep){
@@ -184,7 +194,7 @@ namespace LockstepECL {
                         default:
                             c = curChar;
                             if (c >= '!' && c <= '~')
-                                Warning($"Illegal escape character: \'\\{c}\'"); 
+                                Warning($"Illegal escape character: \'\\{c}\'");
                             else
                                 Warning($"Illegal escape character: \'\\{c}\'");
                             break;
@@ -250,7 +260,6 @@ namespace LockstepECL {
         }
 
         private void ParseCommentCppStyle(){
-            
             while (curChar != '\n') {
                 GetChar();
             }
@@ -364,8 +373,8 @@ namespace LockstepECL {
                 case '7':
                 case '8':
                 case '9':
-                    ParseNumber();
-                    curTokenId = TK_CINT;
+                    var isFloat = ParseNumber();
+                    curTokenId = isFloat ? TK_LFloat : TK_CINT;
                     break;
                 case '+':
                     GetChar();
@@ -502,9 +511,10 @@ namespace LockstepECL {
                     GetChar();
                     break;
             }
+
             syntax_indent();
         }
-        
+
         public string GetTokenName(int v){
             if (v > allTokens.Count)
                 return null;

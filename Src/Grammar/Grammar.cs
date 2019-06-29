@@ -11,6 +11,7 @@ namespace LockstepECL {
         public int syntax_level; //缩进级别
 
         public Action FuncSyntaxIndent;
+
         public void TranslationUnit(){
             while (curTokenId != TK_EOF) {
                 external_declaration(SC_GLOBAL);
@@ -79,6 +80,11 @@ namespace LockstepECL {
                     GetToken();
                     break;
                 case KW_INT:
+                    syntax_state = SNTX_SP;
+                    type_found = true;
+                    GetToken();
+                    break;
+                case KW_FLOAT:
                     syntax_state = SNTX_SP;
                     type_found = true;
                     GetToken();
@@ -172,7 +178,7 @@ namespace LockstepECL {
             if (curTokenId == KW_ALIGN) {
                 GetToken();
                 SkipToken(TK_OPENPA);
-                if (curTokenId == TK_CINT) {
+                if (curTokenId == TK_CINT || curTokenId == TK_LFloat) {
                     GetToken();
                 }
                 else
@@ -203,7 +209,11 @@ namespace LockstepECL {
                 GetToken();
                 if (curTokenId == TK_CINT) {
                     GetToken();
-                    n = (int) tkvalue;
+                    //n = (int) tkvalue;
+                }
+                else if (curTokenId == TK_LFloat) {
+                    GetToken();
+                    //n = (float) tkvalue;
                 }
 
                 SkipToken(TK_CLOSEBR);
@@ -250,6 +260,7 @@ namespace LockstepECL {
                 case KW_CHAR:
                 case KW_SHORT:
                 case KW_INT:
+                case KW_FLOAT:
                 case KW_VOID:
                 case KW_STRUCT:
                     return true;
@@ -492,6 +503,7 @@ namespace LockstepECL {
             int t;
             switch (curTokenId) {
                 case TK_CINT:
+                case TK_LFloat:
                 case TK_CCHAR:
                     GetToken();
                     break;
