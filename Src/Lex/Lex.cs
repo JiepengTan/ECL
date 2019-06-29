@@ -5,6 +5,9 @@ using static LockstepECL.Define;
 
 namespace LockstepECL {
     public partial class Lex {
+        
+
+
         public Dictionary<string, Token> str2Token;
         public List<Token> allTokens;
         public DynString sourcestr;

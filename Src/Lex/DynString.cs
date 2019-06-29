@@ -6,6 +6,8 @@ namespace LockstepECL {
 
         private StringBuilder _sb = new StringBuilder();
 
+        
+
         public void AddCh(char ch){
             _sb.Append(ch);
         }

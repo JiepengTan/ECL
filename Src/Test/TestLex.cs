@@ -1,9 +1,7 @@
 using System;
 using System.IO;
 using static LockstepECL.Define;
-using static LockstepECL.ESynTaxState;
-
-using static LockstepECL.ESynTaxState;
+using static LockstepECL.ConstDefine;
 
 namespace LockstepECL {
     public class TestLex {
