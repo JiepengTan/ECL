@@ -6,10 +6,11 @@ namespace LockstepECL {
         public static void Main(string[] args){
             TestLex();
             TestGrammar();
+            TestSymbol();
         }
 
         private static void TestLex(){
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../data/HelloWorld.c");//HelloWorld
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../data/ErrorHelloWorld.c");//HelloWorld
             var test = new TestLex();
             test.Init(path);
             test.ShowLexResult();
@@ -18,6 +19,13 @@ namespace LockstepECL {
 
         private static void TestGrammar(){
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../data/SyntaxIndent.c");
+            var test = new TestGrammar();
+            test.Init(path);
+            test.ShowGrammarResult();
+            ErrorHandler.DumpErrorInfo();
+        }
+        private static void TestSymbol(){
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../data/HelloWorld.c");
             var test = new TestGrammar();
             test.Init(path);
             test.ShowGrammarResult();

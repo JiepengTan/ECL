@@ -1,12 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static ErrorHandler;
 using static LockstepECL.Define;
 using static LockstepECL.ConstDefine;
 
 namespace LockstepECL {
-    public class Stack { }
+    public class Stack : Stack<object> {
+        public object GetTop(){
+            if (this.Count == 0) return null;
+            return this.Peek();
+        }
+    }
 
     //code gen
     public unsafe partial class Lex {
@@ -14,20 +20,21 @@ namespace LockstepECL {
         void memcpy(void* src, void* dst, int size){ }
 
         Section allocate_storage(Type type, int r, int has_init, int v, ref int addr){
-            return null;
+            return new Section();
         }
 
         void coffsym_add_update(Symbol s, int val, int sec_index, short type, char StorageClass){ }
         void init_variable(Type type, Section sec, int c, int v){ }
 
-        int calc_align(int n, int align){
-            return 4;
+        void init_array(Type type, Section sec, int c, int v){
+            //memcpy(sec.data + c, tkstr.data, tkstr.count);//TODO
         }
 
-        int type_size(Type type, ref int a){
-            return 4;
-        }
 
+        void check_lvalue(){
+            //if(!(optop->r & SC_LVAL))
+            //Expect("左值");
+        }
 
         void backpatch(int t, int a){ }
 
@@ -42,11 +49,11 @@ namespace LockstepECL {
         void operand_pop(){ }
         void gen_jmpbackword(int a){ }
 
+
         int load_1(int rc, Operand opd){
             return 4;
         }
 
-        void check_lvalue(){ }
         void store0_1(){ }
         void gen_op(int op){ }
         void cancel_lvalue(){ }
@@ -60,17 +67,52 @@ namespace LockstepECL {
     }
 
     public unsafe partial class Lex {
+        Stack global_sym_stack = new Stack();
+        Stack local_sym_stack = new Stack();
+
         int rsym, ind, loc;
         int func_begin_ind;
         int func_ret_sub;
         Type char_pointer_type, int_type, default_func_type;
         Operand[] opstack = new Operand[256];
         Operand optop;
-        Stack global_sym_stack, local_sym_stack;
         public int syntax_state; //语法状态
         public int syntax_level; //缩进级别
 
         public Action FuncSyntaxIndent;
+
+        int calc_align(int n, int align){
+            return ((n + align - 1) & (~(align - 1)));
+        }
+
+        int type_size(Type type, ref int a){
+            var bt = type.t & T_BTYPE;
+            var size = 0;
+            switch (bt) {
+                case T_STRUCT: {
+                    var s = type._ref;
+                    a = s.register;
+                    return s.value;
+                }
+                case T_PTR:
+                    if ((type.t & T_ARRAY) != 0) {
+                        return type_size(type._ref.type, ref a) * type._ref.value;
+                    }
+                    else {
+                        a = PTR_SIZE;
+                        return PTR_SIZE;
+                    }
+                case T_INT:
+                    a = 4;
+                    return 4;
+                case T_SHORT:
+                    a = 2;
+                    return 2;
+                default:
+                    a = 1;
+                    return 1;
+            }
+        }
 
         void syntax_indent(){
             FuncSyntaxIndent();
@@ -80,51 +122,125 @@ namespace LockstepECL {
         void stack_init(Stack stack, int initsize){ }
 
         object stack_push(Stack stack, object element, int size){
+            stack.Push(element);
             return null;
         }
 
-        void stack_pop(Stack stack){ }
+        void stack_pop(Stack stack){
+            stack.Pop();
+        }
 
         object stack_get_top(Stack stack){
-            return null;
+            return stack.GetTop();
         }
 
-        int stack_is_empty(Stack stack){
-            return 0;
+        bool stack_is_empty(Stack stack){
+            return stack.Count == 0;
         }
 
         void stack_destroy(Stack stack){ }
 
+        void mk_pointer(Type type){ }
         //symbol
         Symbol struct_search(int v){
-            return null;
+            if (v >= allTokens.Count)
+                return null;
+            return allTokens[v].symStruct;
         }
 
         Symbol sym_search(int v){
-            return null;
+            if (v >= allTokens.Count)
+                return null;
+            return allTokens[v].symIdentifier;
         }
 
         Symbol sym_direct_push(Stack ss, int v, Type type, int c){
-            return null;
+            var s = new Symbol {type = type, code = c, next = null};
+            ss.Push(s);
+            return s;
         }
 
         Symbol sym_push(int v, Type type, int r, int c){
-            return null;
+            var ss = local_sym_stack.Count == 0 ? local_sym_stack : global_sym_stack;
+            var sb = sym_direct_push(ss, v, type, c);
+            sb.register = r;
+            if (v.IsSTRUCT() || v.IsDefine()) {
+                var ts = allTokens[v.GetStorageType()];
+                if (v.IsSTRUCT()) {
+                    sb.prev_tok = ts.symStruct;
+                    ts.symStruct = sb;
+                }
+                else {
+                    sb.prev_tok = ts.symIdentifier;
+                    ts.symIdentifier = sb;
+                }
+            }
+
+            return sb;
         }
 
-        void sym_pop(Stack ptop, Symbol b){ }
-        void mk_pointer(Type type){ }
+        void sym_pop(Stack ptop, Symbol b){
+            var s = (Symbol)stack_get_top(ptop);
+            while (s!=b) {
+                var v = s.code;
+                if (v.IsSTRUCT() || v.IsDefine()) {
+                    var ts = allTokens[v.GetStorageType()];
+                    if (v.IsSTRUCT()) {
+                        ts.symStruct = s.prev_tok;
+                    }
+                    else {
+                        ts.symIdentifier = s.prev_tok;
+                    }
+                }
+                stack_pop(ptop);
+                s = stack_get_top(ptop) as Symbol;
+            }
+        }
 
         Symbol func_sym_push(int v, Type type){
-            return null;
+            var s = sym_direct_push(global_sym_stack, v, type, 0);
+            s.prev_tok = null;
+            var ps = allTokens[v].symIdentifier;
+            if (ps == null) {
+                allTokens[v].symIdentifier = s;
+                return s;
+            }
+            else {
+                while (ps.prev_tok != null) {
+                    ps = ps.prev_tok;
+                }
+
+                ps.prev_tok = s;
+                return s;
+            }
+        }
+
+
+        Symbol var_sym_put(Type type, int r, int v, int addr){
+            Symbol sym = null;
+            if (r.IsLOCAL()) {
+                sym = sym_push(v, type, r, addr);
+            }
+            else if (v != 0 && r.IsGLOBAL()) {
+                sym = sym_search(v);
+            }
+
+            if (sym != null) {
+                Error($"!duplicate define {allTokens[v]}");
+            }
+            else {
+                sym = sym_push(v, type, r | SC_SYM, 0);
+            }
+
+            return sym;
         }
 
         Symbol sec_sym_put(string sec, int c){
-            return null;
-        }
-
-        Symbol var_sym_put(Type type, int r, int v, int addr){
-            return null;
+            var type = new Type();
+            type.t = T_INT; //TODO 确认是INt
+            var tp = InsertToken(sec);
+            curTokenId = tp.id;
+            return sym_push(curTokenId, type, SC_GLOBAL, c);
         }
 
         string get_tkstr(int v){
@@ -179,7 +295,7 @@ namespace LockstepECL {
                         sym = func_sym_push(v, type);
                     }
 
-                    sym.r = SC_SYM | SC_GLOBAL;
+                    sym.register = SC_SYM | SC_GLOBAL;
                     funcbody(sym);
                     break;
                 }
@@ -203,7 +319,7 @@ namespace LockstepECL {
                             GetToken(); //不能放到后面，char str[]="abc"情况，需要allocate_storage求字符串长度				    
                         }
 
-                        sec = allocate_storage(type, r, has_init?1:0, v, ref addr);
+                        sec = allocate_storage(type, r, has_init ? 1 : 0, v, ref addr);
                         sym = var_sym_put(type, r, v, addr);
                         if (l == SC_GLOBAL)
                             coffsym_add_update(sym, addr, sec.index, 0, IMAGE_SYM_CLASS_EXTERNAL);
@@ -228,7 +344,7 @@ namespace LockstepECL {
 
         void initializer(Type type, int c, Section sec){
             if ((type.t & T_ARRAY) != 0 && sec != null) {
-                //memcpy(sec.data + c, tkstr.data, tkstr.count);//TODO
+                init_array(type, sec, c, 0);
                 GetToken();
             }
             else {
@@ -307,7 +423,7 @@ namespace LockstepECL {
                 type1.t = KW_STRUCT;
                 // -1表示结构体未定义
                 s = sym_push(v | SC_STRUCT, type1, 0, -1);
-                s.r = 0;
+                s.register = 0;
             }
 
             type.t = T_STRUCT;
@@ -323,7 +439,7 @@ namespace LockstepECL {
             syntax_state = SNTX_LF_HT; // 第一个结构体成员与'{'不写在一行
             syntax_level++; // 结构体成员变量声明，缩进增加一级
             GetToken();
-            if (s.c != -1)
+            if (s.value != -1)
                 Error("结构体已定义");
             int maxalign = 1;
             int offset = 0;
@@ -334,8 +450,8 @@ namespace LockstepECL {
             SkipToken(TK_END);
             syntax_state = SNTX_LF_HT;
 
-            s.c = calc_align(offset, maxalign); //结构体大小
-            s.r = maxalign; //结构体对齐
+            s.value = calc_align(offset, maxalign); //结构体大小
+            s.register = maxalign; //结构体对齐
         }
 
         void struct_declaration(ref int maxalign, ref int offset, ref Symbol ps){
@@ -805,7 +921,7 @@ namespace LockstepECL {
                     s = optop.type._ref;
                     curTokenId |= SC_MEMBER;
                     while ((s = s.next) != null) {
-                        if (s.v == curTokenId)
+                        if (s.code == curTokenId)
                             break;
                     }
 
@@ -813,7 +929,7 @@ namespace LockstepECL {
                         Error("没有此成员变量: %s", get_tkstr(curTokenId & ~SC_MEMBER));
                     /* 成员变量地址 = 结构变量指针 + 成员变量偏移 */
                     optop.type = char_pointer_type; /* 成员变量的偏移是指相对于结构体首地址的字节偏移，因此此处变换类型为字节变量指针 */
-                    operand_push(int_type, SC_GLOBAL, s.c);
+                    operand_push(int_type, SC_GLOBAL, s.value);
                     gen_op(TK_PLUS); //执行后optop.value记忆了成员地址
                     /* 变换类型为成员变量数据类型 */
                     optop.type = s.type;
@@ -875,11 +991,11 @@ namespace LockstepECL {
                             Error("'%s'未声明\n", get_tkstr(t));
 
                         s = func_sym_push(t, default_func_type); //允许函数不声明，直接引用
-                        s.r = SC_GLOBAL | SC_SYM;
+                        s.register = SC_GLOBAL | SC_SYM;
                     }
 
-                    r = s.r;
-                    operand_push(s.type, r, s.c);
+                    r = s.register;
+                    operand_push(s.type, r, s.value);
                     /* 符号引用，操作数必须记录符号地址 */
                     if ((optop.r & (ushort) SC_SYM) != 0) {
                         optop.sym = s;

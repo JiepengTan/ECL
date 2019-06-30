@@ -9,9 +9,9 @@ namespace LockstepECL {
     }
 
     public class Symbol {
-        public int v; // 符号的单词编码
-        public int r; // 符号关联的寄存器
-        public int c; // 符号关联值
+        public int code; // 符号的单词编码
+        public int register; // 符号关联的寄存器
+        public int value; // 符号关联值
         public Type type; // 符号类型
         public Symbol next; // 关联的其它符号，结构体定义关联成员变量符号，函数定义关联参数符号
         public Symbol prev_tok; // 指向前一定义的同名符号

@@ -1,11 +1,5 @@
 namespace LockstepECL {
     public class Define {
-
-        
-        
-        
-        
-        
         public const int TK_PLUS        = 0 ;
         public const int TK_MINUS       = 1 ;
         public const int TK_STAR        = 2 ;

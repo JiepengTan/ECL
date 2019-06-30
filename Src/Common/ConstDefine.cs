@@ -80,6 +80,9 @@ namespace LockstepECL {
             public const int  ADDR_OTHER =0;				// 寄存器间接寻址 [EAX],[EBX]
             public const int  ADDR_REG = 3;			// 寄存器直接寻址，EAX,EBX等相当于mod=11000000(C0)
         //};
+        
+        
+        public const int PTR_SIZE = 4;
     }
     
  
