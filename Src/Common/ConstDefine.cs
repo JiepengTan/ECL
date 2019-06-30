@@ -46,7 +46,8 @@ namespace LockstepECL {
         public const int T_VOID = 3; // 空类型                         
         public const int T_PTR = 4; // 指针                          
         public const int T_FUNC = 5; // 函数                     
-        public const int T_STRUCT = 6; // 结构体 
+        public const int T_STRUCT = 6; // 结构体                
+        public const int T_CLASS = 6; // 结构体 
 
 
         public const int T_BTYPE = 0x000f; // 基本类型掩码          
@@ -105,5 +106,13 @@ namespace LockstepECL {
 
 
         public const int PTR_SIZE = 4;
+    }
+
+    public enum EBuildInTypes {
+        Char,
+        Short,
+        CStr,
+        Int,
+        NumOfEnum
     }
 }
