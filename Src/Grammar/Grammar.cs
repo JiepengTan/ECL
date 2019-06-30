@@ -203,7 +203,7 @@ namespace LockstepECL {
             }
 
             var firstTokenId = lastTokenId;
-            if (curTypeId.IsSTRUCT() && curTokenId == TK_SEMICOLON) {
+            if (curTypeId == T_STRUCT && curTokenId == TK_SEMICOLON) {
                 GetToken();
                 return;
             }
@@ -633,8 +633,11 @@ namespace LockstepECL {
             syntax_state = SNTX_LF_HT;
             syntax_level++; // 复合语句，缩进增加一级
 
-            SymDomain domain = parent ?? new SymDomain();
-            AddDomain(domain);
+            SymDomain domain = parent;
+            if (parent == null) {
+                domain = new SymDomain();
+                AddDomain(domain);
+            }
             PushDomain(domain);
             GetToken();
             while (is_type_specifier(curTokenId)) {
@@ -978,6 +981,7 @@ namespace LockstepECL {
                 if (nb_args != symFunction.ParamsCount)
                     Error("实参个数少于函数形参个数"); //讲一下形参，实参
             }
+
             SkipToken(TK_CLOSEPA);
             gen_invoke(nb_args);
             if (symFunction != null) {
