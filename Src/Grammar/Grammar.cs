@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static ErrorHandler;
@@ -47,9 +48,8 @@ namespace LockstepECL {
             return 4;
         }
 
-        void operand_pop(){ }
-        void gen_jmpbackword(int a){ }
 
+        void gen_jmpbackword(int a){ }
 
         int load_1(int rc, Operand opd){
             return 4;
@@ -59,24 +59,24 @@ namespace LockstepECL {
         void gen_op(int op){ }
         void cancel_lvalue(){ }
         void indirection(){ }
-        void operand_push(Type type, int r, int value){ }
 
         void gen_invoke(int nb_args){ }
-        void gen_prolog(Type func_type){ }
+        void gen_prolog(int func_type){ }
         void gen_epilog(){ }
     }
 
     public unsafe partial class Lex {
-        public int CurStructMaxIdx = (int)EBuildInTypes.NumOfEnum;
+        void operand_pop(){ }
+        void operand_push(Symbol type, object val){ }
+
+        public int CurStructMaxIdx = (int) EBuildInTypes.NumOfEnum;
+
         public void GrammarInit(){
             //sym_sec_rdata = sec_sym_put(".rdata",0);
-            
+
             int_type.typeId = T_INT;
             char_pointer_type.typeId = T_CHAR;
-            mk_pointer(char_pointer_type);
             default_func_type.typeId = T_FUNC;
-            default_func_type._ref = sym_push(SC_ANOM, int_type, KW_CDECL, 0);
-
             optop = opstack[0];
 
             //init_coff();	
@@ -90,9 +90,9 @@ namespace LockstepECL {
         private int loc = 0;
         int func_begin_ind = 0;
         int func_ret_sub = 0;
-        Type char_pointer_type = new Type();
-        Type int_type = new Type();
-        Type default_func_type = new Type();
+        Symbol char_pointer_type = new Symbol();
+        Symbol int_type = new Symbol();
+        Symbol default_func_type = new Symbol();
         Operand[] opstack = new Operand[256];
         Operand optop = new Operand();
         public int syntax_state; //语法状态
@@ -109,7 +109,7 @@ namespace LockstepECL {
             switch (bt) {
                 case T_STRUCT: {
                     align = CurSymbol.align;
-                    return CurSymbol.TypeSize();
+                    return CurSymbol.align;
                 }
                 case T_INT:
                     align = 4;
@@ -127,58 +127,12 @@ namespace LockstepECL {
             FuncSyntaxIndent();
         }
 
-//stack
-        void stack_init(Stack stack, int initsize){ }
-
-        object stack_push(Stack stack, object element, int size){
-            stack.Push(element);
-            return null;
-        }
-
-        void stack_pop(Stack stack){
-            stack.Pop();
-        }
-
-        object stack_get_top(Stack stack){
-            return stack.GetTop();
-        }
-
-        bool stack_is_empty(Stack stack){
-            return stack.Count == 0;
-        }
-
-        void stack_destroy(Stack stack){ }
-
-        void mk_pointer(Type type){ }
-
-        //symbol
-        Symbol struct_search(int v){
-            if (v >= allTokens.Count)
-                return null;
-            return allTokens[v].symbol;
-        }
-
-        Symbol struct_search_or_create(int v){
-            if (v >= allTokens.Count)
-                return null;
-            if (allTokens[v].symbol == null) {
-                allTokens[v].symbol = new Symbol();
-            }
-
-            return allTokens[v].symbol;
-        }
-
-        Symbol FindSymbol(int typeId){
-            if (typeId >= allTokens.Count)
-                return null;
-            return allTokens[typeId].symbol;
-        }
-
         bool HasStruct(int tokenId){
             if (tokenId >= allTokens.Count)
                 return false;
             return _curDomain.HasStruct(tokenId);
         }
+
         SymFunction FindFunction(int tokenId, bool isRecursiveFind){
             if (tokenId >= allTokens.Count)
                 return null;
@@ -191,111 +145,6 @@ namespace LockstepECL {
             return _curDomain.FindSymbol(tokenId, isRecursiveFind) as SymVar;
         }
 
-        Symbol sym_direct_push(Stack ss, int v, Type type, int c){
-            var s = new Symbol {
-                type = type,
-                value = c,
-                tokenId = v,
-                next = null
-            };
-            ss.Push(s);
-            return s;
-        }
-
-        Symbol sym_push(int v, Type type, int r, int c){
-            var ss = local_sym_stack.Count == 0 ? local_sym_stack : global_sym_stack;
-            var sb = sym_direct_push(ss, v, type, c);
-            sb.align = r;
-            if (v.IsSTRUCT() || v.IsDefine()) {
-                var ts = allTokens[v.GetStorageType()];
-                if (v.IsSTRUCT()) {
-                    sb.prev_tok = ts.symbol;
-                    ts.symbol = sb;
-                }
-                else {
-                    sb.prev_tok = ts.symbol;
-                    ts.symbol = sb;
-                }
-            }
-
-            return sb;
-        }
-
-        void sym_pop(Stack ptop, Symbol b){
-            var s = (Symbol) stack_get_top(ptop);
-            while (s != b) {
-                var v = s.tokenId;
-                if (v.IsSTRUCT() || v.IsDefine()) {
-                    var ts = allTokens[v.GetStorageType()];
-                    if (v.IsSTRUCT()) {
-                        ts.symbol = s.prev_tok;
-                    }
-                    else {
-                        ts.symbol = s.prev_tok;
-                    }
-                }
-
-                stack_pop(ptop);
-                s = stack_get_top(ptop) as Symbol;
-            }
-        }
-
-        Symbol func_sym_push(int v, Type type){
-            var s = sym_direct_push(global_sym_stack, v, type, 0);
-            s.prev_tok = null;
-            s.__name = "func_" + allTokens[v].name;
-            var ps = allTokens[v].symbol;
-            if (ps == null) {
-                allTokens[v].symbol = s;
-                return s;
-            }
-            else {
-                while (ps.prev_tok != null) {
-                    ps = ps.prev_tok;
-                }
-
-                ps.prev_tok = s;
-                return s;
-            }
-        }
-
-
-        Symbol var_sym_put(Type type, int r, int v, int addr){
-            Symbol sym = null;
-            if (r.IsLOCAL()) {
-                sym = sym_push(v, type, r, addr);
-            }
-            else if (v != 0 && r.IsGLOBAL()) {
-                sym = FindSymbol(v);
-            }
-
-            if (sym != null) {
-                Error($"!duplicate define {allTokens[v]}");
-            }
-            else {
-                sym = sym_push(v, type, r | SC_SYM, 0);
-            }
-
-            return sym;
-        }
-
-        Symbol sec_sym_put(string sec, int c){
-            var type = new Type();
-            type.typeId = T_INT; //TODO 确认是INt
-            var tp = InsertToken(sec);
-            curTokenId = tp.id;
-            return sym_push(curTokenId, type, SC_GLOBAL, c);
-        }
-
-        string get_tkstr(int v){
-            if (v >= allTokens.Count) {
-                return null;
-            }
-            else if (v >= TK_CINT && v <= TK_CSTR)
-                return sourcestr.Data;
-            else
-                return allTokens[v].name;
-        }
 
         private SymDomain global;
 
@@ -353,7 +202,7 @@ namespace LockstepECL {
                 Expect("<类型区分符>");
             }
 
-
+            var firstTokenId = lastTokenId;
             if (curTypeId.IsSTRUCT() && curTokenId == TK_SEMICOLON) {
                 GetToken();
                 return;
@@ -361,7 +210,6 @@ namespace LockstepECL {
 
             while (true) {
                 var force_align = -1;
-                var firstTypeId = curTypeId;
                 var sym = declarator(ref tokenId, ref force_align);
 
                 if (curTokenId == TK_BEGIN) //函数定义
@@ -370,7 +218,7 @@ namespace LockstepECL {
                     if (symFunc == null)
                         Expect("<函数定义>");
                     AddFunction(symFunc);
-                    symFunc.RetTypeId = firstTypeId;
+                    symFunc.RetTypeId = firstTokenId;
                     funcbody(symFunc);
                     break;
                 }
@@ -384,7 +232,8 @@ namespace LockstepECL {
                     var symVar = sym as SymVar;
                     sym.__name = "var_" + (l == SC_GLOBAL ? "l_" : "g_") + allTokens[tokenId].name;
                     AddVariable(symVar);
-                    symVar.typeId = firstTypeId;
+                    symVar.typeId = firstTokenId;
+                    symVar.parentDomain = _curDomain;
                     r = 0;
                     if (symVar.isArray)
                         r |= SC_LVAL;
@@ -400,7 +249,7 @@ namespace LockstepECL {
                     //    coffsym_add_update(sym, addr, sec.index, 0, IMAGE_SYM_CLASS_EXTERNAL);
 
                     if (has_init) {
-                        initializer(symVar.isArray, addr, sec);
+                        initializer(symVar.isArray, addr);
                     }
                 }
 
@@ -416,24 +265,23 @@ namespace LockstepECL {
         }
 
 
-        void initializer(bool isArray, int c, Section sec){
-            if (isArray && sec != null) {
-                //init_array(type, sec, c, 0);
+        void initializer(bool isArray, int c){
+            if (isArray) {
                 GetToken();
             }
             else {
                 assignment_expression();
-                //init_variable(type, sec, c, 0);
             }
         }
 
         public int curTypeId; //当前类型
         public Symbol CurSymbol; //当前符号
 
-        
+
         bool type_specifier(){
             bool type_found = false;
             curTypeId = 0;
+            lastTokenId = curTokenId;
             switch (curTokenId) {
                 case KW_CHAR:
                     curTypeId = T_CHAR;
@@ -466,21 +314,25 @@ namespace LockstepECL {
                     type_found = true;
                     break;
                 default:
-                    var hasStruct =  HasStruct(curTokenId);
+                    var hasStruct = HasStruct(curTokenId);
                     if (!hasStruct) {
                         Error("Unknown type" + curTokenId);
                     }
                     else {
+                        lastTokenId = curTokenId;
                         curTypeId = T_CLASS;
                         type_found = true;
                         syntax_state = SNTX_SP;
                         GetToken();
                     }
+
                     break;
             }
 
             return type_found;
         }
+
+        public int lastTokenId;
 
         void AddStruct(int typeId, SymStruct structInfo){
             if (allTokens[typeId].symbol != null) {
@@ -531,7 +383,7 @@ namespace LockstepECL {
                 AddStruct(typeId, sym);
                 AddStruct(sym);
             }
-            
+
             PushDomain(sym);
             curTypeId = T_STRUCT;
             CurSymbol = sym;
@@ -546,8 +398,6 @@ namespace LockstepECL {
             syntax_state = SNTX_LF_HT; // 第一个结构体成员与'{'不写在一行
             syntax_level++; // 结构体成员变量声明，缩进增加一级
             GetToken();
-            if (curStruct.value != -1)
-                Error("结构体已定义");
             int maxalign = 1;
             int offset = 0;
             while (curTokenId != TK_END) {
@@ -557,18 +407,18 @@ namespace LockstepECL {
             SkipToken(TK_END);
             syntax_state = SNTX_LF_HT;
 
-            curStruct.value = calc_align(offset, maxalign); //结构体大小
+            curStruct.memSize = calc_align(offset, maxalign); //结构体大小
             curStruct.align = maxalign; //结构体对齐
         }
 
         void struct_declaration(ref int maxalign, ref int offset, SymStruct curStruct){
-            int typeId, size, align = 0;
-            int force_align = 0;
             type_specifier();
             while (true) {
-                typeId = 0;
-                var ss = declarator(ref typeId, ref force_align) as SymVar;
-                size = type_size(ref align);
+                int force_align = 0;
+                int align = 0;
+                int tokenId = 0;
+                var ss = declarator(ref tokenId, ref force_align) as SymVar;
+                var size = type_size(ref align);
 
                 if ((force_align & ALIGN_SET) != 0)
                     align = force_align & ~ALIGN_SET;
@@ -578,8 +428,8 @@ namespace LockstepECL {
                     maxalign = align;
 
                 ss.offset = offset;
-                ss.tokenId = typeId;
-                ss.__name = curStruct.__name + ":" + allTokens[typeId].name;
+                ss.tokenId = tokenId;
+                ss.__name = curStruct.__name + ":" + allTokens[tokenId].name;
                 curStruct.AddVariable(ss);
                 offset += size;
                 if (curTokenId == TK_SEMICOLON || curTokenId == TK_EOF)
@@ -592,12 +442,12 @@ namespace LockstepECL {
         }
 
 
-        Symbol declarator(ref int typeId, ref int force_align){
+        Symbol declarator(ref int tokenId, ref int force_align){
             int fc = 0;
             function_calling_convention(ref fc);
             if (force_align != -1)
                 struct_member_alignment(ref force_align);
-            return direct_declarator(ref typeId, fc);
+            return direct_declarator(ref tokenId, fc);
         }
 
         void function_calling_convention(ref int fc){
@@ -726,9 +576,7 @@ namespace LockstepECL {
         void funcbody(SymFunction sym){
             ind = sec_text.data_offset;
             coffsym_add_update(sym, ind, sec_text.index, CST_FUNC, IMAGE_SYM_CLASS_EXTERNAL);
-            /* 放一匿名符号在局部符号表中 */
-            sym_direct_push(local_sym_stack, SC_ANOM, int_type, 0);
-            gen_prolog(sym.type);
+            gen_prolog(sym.typeId);
             rsym = 0;
             var bsym = -1;
             var csym = -1;
@@ -736,7 +584,6 @@ namespace LockstepECL {
             backpatch(rsym, ind);
             gen_epilog();
             sec_text.data_offset = ind;
-            sym_pop(local_sym_stack, null); /* 清空局部符号栈*/
         }
 
         bool is_type_specifier(int tokenId){
@@ -993,10 +840,6 @@ namespace LockstepECL {
                 case TK_AND:
                     GetToken();
                     unary_expression();
-                    if ((optop.type.typeId & T_BTYPE) != T_FUNC &&
-                        (optop.type.typeId & T_ARRAY) != 0)
-                        cancel_lvalue();
-                    mk_pointer(optop.type);
                     break;
                 case TK_STAR:
                     GetToken();
@@ -1009,7 +852,7 @@ namespace LockstepECL {
                     break;
                 case TK_MINUS:
                     GetToken();
-                    operand_push(int_type, SC_GLOBAL, 0);
+                    operand_push(int_type, 0);
                     unary_expression();
                     gen_op(TK_MINUS);
                     break;
@@ -1033,7 +876,7 @@ namespace LockstepECL {
             var size = type_size(ref align);
             if (size < 0)
                 Error("sizeof计算类型尺寸失败");
-            operand_push(int_type, SC_GLOBAL, size);
+            operand_push(int_type, size);
         }
 
         void postfix_expression(){
@@ -1045,29 +888,13 @@ namespace LockstepECL {
                         indirection();
                     cancel_lvalue();
                     GetToken();
-                    //if ((optop.type.typeId & T_BTYPE) != T_STRUCT)
-                    //    Expect("结构体变量");
-                    //s = optop.type._ref;
-                    //curTokenId |= SC_MEMBER;
-                    //
-                    //while ((s = s.next) != null) {
-                    //    if (s.tokenId == curTokenId)
-                    //        break;
-                    //}
-//
-                    //if (s == null)
-                    //    Error("没有此成员变量: %s", get_tkstr(curTokenId & ~SC_MEMBER));
-                    ///* 成员变量地址 = 结构变量指针 + 成员变量偏移 */
-                    //optop.type = char_pointer_type; /* 成员变量的偏移是指相对于结构体首地址的字节偏移，因此此处变换类型为字节变量指针 */
-                    //operand_push(int_type, SC_GLOBAL, s.value);
-                    //gen_op(TK_PLUS); //执行后optop.value记忆了成员地址
-                    ///* 变换类型为成员变量数据类型 */
-                    //optop.type = s.type;
-                    ///* 数组变量不能充当左值 */
-                    //if ((optop.type.typeId & T_ARRAY) != 0) {
-                    //    optop.r |= (ushort) SC_LVAL;
-                    //}
-
+                    var symVar = optop.sym as SymVar;
+                    var symStruct = (symVar?.parentDomain ?? global).FindSymbol(symVar.typeId, true) as SymStruct;
+                    if (symStruct == null)
+                        Expect("结构体变量");
+                    optop.sym = symStruct?.FindSymbol(curTokenId, false);
+                    if (optop.sym == null)
+                        Error("没有此成员变量: %s", allTokens[curTokenId].name);
                     GetToken();
                 }
                 else if (curTokenId == TK_OPENBR) {
@@ -1093,17 +920,14 @@ namespace LockstepECL {
             switch (curTokenId) {
                 case TK_CINT:
                 case TK_CCHAR:
-                    operand_push(int_type, SC_GLOBAL, (int) tkvalue);
+                    operand_push(int_type, (int) tkvalue);
                     GetToken();
                     break;
                 case TK_CSTR:
                     t = T_CHAR;
                     type.typeId = t;
-                    mk_pointer(type);
                     type.typeId |= T_ARRAY;
-                    //sec = allocate_storage(type, SC_GLOBAL, 2, 0, ref addr);
-                    var_sym_put(type, SC_GLOBAL, 0, addr);
-                    initializer(true, addr, sec);
+                    initializer(true, addr);
                     break;
                 case TK_OPENPA:
                     GetToken();
@@ -1115,53 +939,50 @@ namespace LockstepECL {
                     GetToken();
                     if (t < TK_IDENT)
                         Expect("标识符或常量");
-                    s = FindVariable(t,true);
+                    s = FindVariable(t, true);
                     if (s == null) {
                         if (curTokenId != TK_OPENPA)
-                            Error("'%s'未声明\n", get_tkstr(t));
-
-                        s = func_sym_push(t, default_func_type); //允许函数不声明，直接引用
-                        s.align = SC_GLOBAL | SC_SYM;
+                            Error("'%s'未声明 \n", allTokens[t].name);
+                        else {
+                            s = FindFunction(t, true);
+                        }
                     }
 
-                    r = s.align;
-                    operand_push(s.type, r, s.value);
-                    /* 符号引用，操作数必须记录符号地址 */
+                    operand_push(s, null);
+
                     optop.sym = s;
-                    optop.value = 0; //用于函数调用，及全局变量引用 printf("g_cc=%c\n",g_cc);
+                    optop.value = 0;
                     break;
             }
         }
 
         void argument_expression_list(){
             Operand ret;
-            Symbol s, sa;
-            int nb_args;
-            //s = optop.type._ref;
+            int nb_args = 0;
             GetToken();
-            //sa = s.next;
-            nb_args = 0;
-            //var type = s.type;
             var r = REG_IRET;
             var value = 0;
             if (curTokenId != TK_CLOSEPA) {
                 for (;;) {
                     assignment_expression();
                     nb_args++;
-                    //if (sa != null)
-                    //    sa = sa.next;
                     if (curTokenId == TK_CLOSEPA)
                         break;
                     SkipToken(TK_COMMA);
                 }
             }
 
-            //if (sa != null)
-            //    Error("实参个数少于函数形参个数"); //讲一下形参，实参
+            var symFunction = optop.sym as SymFunction;
+            if (symFunction != null) {
+                Debug.Assert(symFunction != null, nameof(symFunction) + " != null");
+                if (nb_args != symFunction.ParamsCount)
+                    Error("实参个数少于函数形参个数"); //讲一下形参，实参
+            }
             SkipToken(TK_CLOSEPA);
             gen_invoke(nb_args);
-
-            //operand_push(type, r, value);
+            if (symFunction != null) {
+                operand_push(FindStruct(symFunction.RetTypeId), value);
+            }
         }
     }
 }

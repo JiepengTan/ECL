@@ -63,7 +63,7 @@ namespace LockstepECL {
             new Token(TK_GT         ,">",                null),         
             new Token(TK_GEQ        ,">=",               null),         
             new Token(TK_ASSIGN     ,"=",                null),         
-            new Token(TK_POINTSTO   ,"__.___",           null), //TODO 去重复         
+            new Token(TK_POINTSTO   ,"->",               null),          
             new Token(TK_DOT        ,".",                null),         
             new Token(TK_AND        ,"",                 null),         
             new Token(TK_OPENPA     ,"(",                null),         

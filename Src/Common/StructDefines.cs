@@ -17,22 +17,15 @@ namespace LockstepECL {
         public string __name;
         public int tokenId; // 符号的单词编码//v
         public int align; // 符号关联的寄存器
-        public int value; // 符号关联值//c
-        public Type type; // 符号类型
+        public int memSize; // 符号关联的寄存器
+        public int typeId; // 符号类型
         public Symbol next; // 关联的其它符号，结构体定义关联成员变量符号，函数定义关联参数符号
         public Symbol prev_tok; // 指向前一定义的同名符号
 
         public override string ToString(){
-            return $"name:{__name} code:{tokenId} value:{value} type:{type}";
+            return $"name:{__name} type:{typeId} tokenId:{tokenId} memSize:{memSize} align:{align}";
         }
 
-        public int ArraySize(){
-            return value;
-        }
-
-        public int TypeSize(){
-            return value;
-        }
     }
 
     public class SymDomain : Symbol {
@@ -46,6 +39,9 @@ namespace LockstepECL {
 
         public Dictionary<int, Symbol> tokenId2Symbol = new Dictionary<int, Symbol>();
         HashSet<int> domainTypes = new HashSet<int>();
+
+
+        public int ParamsCount => Params.Count;
 
         public Symbol FindSymbol(int tokenId, bool isRecursiveFind){
             if (tokenId2Symbol.TryGetValue(tokenId, out var val)) {
@@ -119,7 +115,8 @@ namespace LockstepECL {
     public class OpCode { }
 
     public class SymVar : Symbol {
-        public int typeId;
+        public SymVar(){ }
+        public int structTypeId; // 符号类型
         public bool isMember;
         public int offset;
         public SymStruct type;
@@ -166,10 +163,9 @@ namespace LockstepECL {
 
 
     public class Operand {
-        public Type type = new Type(); // 数据类型
-        public ushort r; // 寄存器或存储类型
         public int value; // 常量值，适用于SC_GLOBAL
         public Symbol sym; // 符号，适用于(SC_SYM | SC_GLOBAL)
+        public int storageType;
     };
 
     public class ImportSym {
