@@ -17,6 +17,7 @@ namespace LockstepECL {
     //code gen
     public unsafe partial class Lex {
         private char IMAGE_SYM_CLASS_EXTERNAL = '\t';
+        private Section sec_text = new Section();
         void memcpy(void* src, void* dst, int size){ }
 
         Section allocate_storage(Type type, int r, int has_init, int v, ref int addr){
@@ -61,21 +62,38 @@ namespace LockstepECL {
         void operand_push(Type type, int r, int value){ }
 
         void gen_invoke(int nb_args){ }
-        private Section sec_text;
         void gen_prolog(Type func_type){ }
         void gen_epilog(){ }
     }
 
     public unsafe partial class Lex {
+        public void GrammarInit(){
+            //sym_sec_rdata = sec_sym_put(".rdata",0);
+
+            int_type.t = T_INT;
+            char_pointer_type.t = T_CHAR;
+            mk_pointer(char_pointer_type);
+            default_func_type.t = T_FUNC;
+            default_func_type._ref = sym_push(SC_ANOM, int_type, KW_CDECL, 0);
+
+            optop = opstack[0];
+
+            //init_coff();	
+        }
+
         Stack global_sym_stack = new Stack();
         Stack local_sym_stack = new Stack();
 
-        int rsym, ind, loc;
-        int func_begin_ind;
-        int func_ret_sub;
-        Type char_pointer_type, int_type, default_func_type;
+        private int rsym = 0;
+        private int ind = 0;
+        private int loc = 0;
+        int func_begin_ind = 0;
+        int func_ret_sub = 0;
+        Type char_pointer_type = new Type();
+        Type int_type = new Type();
+        Type default_func_type = new Type();
         Operand[] opstack = new Operand[256];
-        Operand optop;
+        Operand optop = new Operand();
         public int syntax_state; //语法状态
         public int syntax_level; //缩进级别
 
@@ -91,7 +109,7 @@ namespace LockstepECL {
             switch (bt) {
                 case T_STRUCT: {
                     var s = type._ref;
-                    a = s.register;
+                    a = s.align;
                     return s.value;
                 }
                 case T_PTR:
@@ -140,11 +158,26 @@ namespace LockstepECL {
 
         void stack_destroy(Stack stack){ }
 
-        void mk_pointer(Type type){ }
+        void mk_pointer(Type t){
+            Symbol s = sym_push(SC_ANOM, t, 0, -1);
+            t.t = T_PTR;
+            t._ref = s;
+        }
+
         //symbol
         Symbol struct_search(int v){
             if (v >= allTokens.Count)
                 return null;
+            return allTokens[v].symStruct;
+        }
+
+        Symbol struct_search_or_create(int v){
+            if (v >= allTokens.Count)
+                return null;
+            if (allTokens[v].symStruct == null) {
+                allTokens[v].symStruct = new Symbol();
+            }
+
             return allTokens[v].symStruct;
         }
 
@@ -155,7 +188,12 @@ namespace LockstepECL {
         }
 
         Symbol sym_direct_push(Stack ss, int v, Type type, int c){
-            var s = new Symbol {type = type, code = c, next = null};
+            var s = new Symbol {
+                type = type,
+                value = c,
+                code = v,
+                next = null
+            };
             ss.Push(s);
             return s;
         }
@@ -163,7 +201,7 @@ namespace LockstepECL {
         Symbol sym_push(int v, Type type, int r, int c){
             var ss = local_sym_stack.Count == 0 ? local_sym_stack : global_sym_stack;
             var sb = sym_direct_push(ss, v, type, c);
-            sb.register = r;
+            sb.align = r;
             if (v.IsSTRUCT() || v.IsDefine()) {
                 var ts = allTokens[v.GetStorageType()];
                 if (v.IsSTRUCT()) {
@@ -180,8 +218,8 @@ namespace LockstepECL {
         }
 
         void sym_pop(Stack ptop, Symbol b){
-            var s = (Symbol)stack_get_top(ptop);
-            while (s!=b) {
+            var s = (Symbol) stack_get_top(ptop);
+            while (s != b) {
                 var v = s.code;
                 if (v.IsSTRUCT() || v.IsDefine()) {
                     var ts = allTokens[v.GetStorageType()];
@@ -192,6 +230,7 @@ namespace LockstepECL {
                         ts.symIdentifier = s.prev_tok;
                     }
                 }
+
                 stack_pop(ptop);
                 s = stack_get_top(ptop) as Symbol;
             }
@@ -200,6 +239,7 @@ namespace LockstepECL {
         Symbol func_sym_push(int v, Type type){
             var s = sym_direct_push(global_sym_stack, v, type, 0);
             s.prev_tok = null;
+            s.__name = "func_" + allTokens[v].name;
             var ps = allTokens[v].symIdentifier;
             if (ps == null) {
                 allTokens[v].symIdentifier = s;
@@ -244,17 +284,24 @@ namespace LockstepECL {
         }
 
         string get_tkstr(int v){
-            return null;
+            if (v >= allTokens.Count) {
+                return null;
+            }
+            else if (v >= TK_CINT && v <= TK_CSTR)
+                return sourcestr.Data;
+            else
+                return allTokens[v].name;
         }
 
 
-        void translation_unit(){
+        public void TranslationUnit(){
+            optop = new Operand();
             while (curTokenId != TK_EOF) {
-                external_declaration(SC_GLOBAL);
+                external_declaration(SC_GLOBAL, null);
             }
         }
 
-        void external_declaration(int l){
+        void external_declaration(int l, Symbol parent){
             Type btype = new Type();
             Type type;
             int v = 0, r = 0, addr = 0;
@@ -295,7 +342,8 @@ namespace LockstepECL {
                         sym = func_sym_push(v, type);
                     }
 
-                    sym.register = SC_SYM | SC_GLOBAL;
+                    sym.align = SC_SYM | SC_GLOBAL;
+                    sym.__parent = parent;
                     funcbody(sym);
                     break;
                 }
@@ -321,6 +369,9 @@ namespace LockstepECL {
 
                         sec = allocate_storage(type, r, has_init ? 1 : 0, v, ref addr);
                         sym = var_sym_put(type, r, v, addr);
+                        sym.__name = "var_" + (l == SC_GLOBAL ? "l_" : "g_") + allTokens[v].name;
+                        sym.__parent = parent;
+                        
                         if (l == SC_GLOBAL)
                             coffsym_add_update(sym, addr, sec.index, 0, IMAGE_SYM_CLASS_EXTERNAL);
 
@@ -419,11 +470,12 @@ namespace LockstepECL {
             if (v < TK_IDENT) // 关键字不能作为结构名称
                 Expect("结构体名");
             s = struct_search(v);
-            if (s != null) {
+            if (s == null) {
                 type1.t = KW_STRUCT;
                 // -1表示结构体未定义
                 s = sym_push(v | SC_STRUCT, type1, 0, -1);
-                s.register = 0;
+                s.__name = allTokens[v].name;
+                s.align = 0;
             }
 
             type.t = T_STRUCT;
@@ -444,19 +496,18 @@ namespace LockstepECL {
             int maxalign = 1;
             int offset = 0;
             while (curTokenId != TK_END) {
-                struct_declaration(ref maxalign, ref offset, ref s.next);
+                struct_declaration(ref maxalign, ref offset, s);
             }
 
             SkipToken(TK_END);
             syntax_state = SNTX_LF_HT;
 
             s.value = calc_align(offset, maxalign); //结构体大小
-            s.register = maxalign; //结构体对齐
+            s.align = maxalign; //结构体对齐
         }
 
-        void struct_declaration(ref int maxalign, ref int offset, ref Symbol ps){
+        void struct_declaration(ref int maxalign, ref int offset, Symbol structSym){
             int v, size, align = 0;
-            Symbol ss;
             Type btype = new Type();
             int force_align = 0;
             type_specifier(btype);
@@ -473,10 +524,12 @@ namespace LockstepECL {
 
                 if (align > maxalign)
                     maxalign = align;
-                ss = sym_push(v | SC_MEMBER, type1, 0, offset);
+                var ss = sym_push(v | SC_MEMBER, type1, 0, offset);
                 offset += size;
-                ps = ss;
-                ps = ss.next;
+                ss.__parent = structSym;
+                ss.__name = structSym.__name + ":" + allTokens[v].name;
+                ss.next = structSym.next;
+                structSym.next = ss;
 
                 if (curTokenId == TK_SEMICOLON || curTokenId == TK_EOF)
                     break;
@@ -618,7 +671,7 @@ namespace LockstepECL {
             rsym = 0;
             var bsym = -1;
             var csym = -1;
-            compound_statement(ref bsym, ref csym);
+            compound_statement(ref bsym, ref csym, sym);
             backpatch(rsym, ind);
             gen_epilog();
             sec_text.data_offset = ind;
@@ -640,13 +693,13 @@ namespace LockstepECL {
             return false;
         }
 
-        void statement(ref int bsym, ref int csym){
+        void statement(ref int bsym, ref int csym, Symbol parent){
             switch (curTokenId) {
                 case TK_BEGIN:
-                    compound_statement(ref bsym, ref csym);
+                    compound_statement(ref bsym, ref csym, parent);
                     break;
                 case KW_IF:
-                    if_statement(ref bsym, ref csym);
+                    if_statement(ref bsym, ref csym, parent);
                     break;
                 case KW_RETURN:
                     return_statement();
@@ -658,7 +711,7 @@ namespace LockstepECL {
                     continue_statement(ref csym);
                     break;
                 case KW_FOR:
-                    for_statement(ref bsym, ref csym);
+                    for_statement(ref bsym, ref csym, parent);
                     break;
                 default:
                     expression_statement();
@@ -666,7 +719,7 @@ namespace LockstepECL {
             }
         }
 
-        void compound_statement(ref int bsym, ref int csym){
+        void compound_statement(ref int bsym, ref int csym, Symbol parent){
             Symbol s;
             s = (Symbol) stack_get_top(local_sym_stack);
             syntax_state = SNTX_LF_HT;
@@ -674,11 +727,11 @@ namespace LockstepECL {
 
             GetToken();
             while (is_type_specifier(curTokenId)) {
-                external_declaration(SC_LOCAL);
+                external_declaration(SC_LOCAL, parent);
             }
 
             while (curTokenId != TK_END) {
-                statement(ref bsym, ref csym);
+                statement(ref bsym, ref csym, parent);
             }
 
             sym_pop(local_sym_stack, s);
@@ -686,7 +739,7 @@ namespace LockstepECL {
             GetToken();
         }
 
-        void if_statement(ref int bsym, ref int csym){
+        void if_statement(ref int bsym, ref int csym, Symbol parent){
             int a, b;
             syntax_state = SNTX_SP;
             GetToken();
@@ -695,20 +748,20 @@ namespace LockstepECL {
             syntax_state = SNTX_LF_HT;
             SkipToken(TK_CLOSEPA);
             a = gen_jcc(0);
-            statement(ref bsym, ref csym);
+            statement(ref bsym, ref csym, parent);
             if (curTokenId == KW_ELSE) {
                 syntax_state = SNTX_LF_HT;
                 GetToken();
                 b = gen_jmpforward(0);
                 backpatch(a, ind);
-                statement(ref bsym, ref csym);
+                statement(ref bsym, ref csym, parent);
                 backpatch(b, ind); /* 反填else跳转 */
             }
             else
                 backpatch(a, ind);
         }
 
-        void for_statement(ref int bsym, ref int csym){
+        void for_statement(ref int bsym, ref int csym, Symbol parent){
             int a, b, c, d, e;
             GetToken();
             SkipToken(TK_OPENPA);
@@ -739,7 +792,7 @@ namespace LockstepECL {
 
             syntax_state = SNTX_LF_HT;
             SkipToken(TK_CLOSEPA);
-            statement(ref a, ref b); //只有此处用到break,及continue,一个循环中可能有多个break,或多个continue,故需要拉链以备反填
+            statement(ref a, ref b, parent); //只有此处用到break,及continue,一个循环中可能有多个break,或多个continue,故需要拉链以备反填
             gen_jmpbackword(c);
             backpatch(a, ind);
             backpatch(b, c);
@@ -986,18 +1039,18 @@ namespace LockstepECL {
                     if (t < TK_IDENT)
                         Expect("标识符或常量");
                     s = sym_search(t);
-                    if (s != null) {
+                    if (s == null) {
                         if (curTokenId != TK_OPENPA)
                             Error("'%s'未声明\n", get_tkstr(t));
 
                         s = func_sym_push(t, default_func_type); //允许函数不声明，直接引用
-                        s.register = SC_GLOBAL | SC_SYM;
+                        s.align = SC_GLOBAL | SC_SYM;
                     }
 
-                    r = s.register;
+                    r = s.align;
                     operand_push(s.type, r, s.value);
                     /* 符号引用，操作数必须记录符号地址 */
-                    if ((optop.r & (ushort) SC_SYM) != 0) {
+                    if (optop!= null && (optop.r & (ushort) SC_SYM) != 0) {
                         optop.sym = s;
                         optop.value = 0; //用于函数调用，及全局变量引用 printf("g_cc=%c\n",g_cc);
                     }

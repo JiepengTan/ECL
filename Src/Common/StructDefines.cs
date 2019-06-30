@@ -6,15 +6,61 @@ namespace LockstepECL {
     public class Type {
         public int t;
         public Symbol _ref;
+        public override string ToString(){
+            return "type: " + ((ETypeCode)t).ToString();
+        }
     }
 
     public class Symbol {
-        public int code; // 符号的单词编码
-        public int register; // 符号关联的寄存器
-        public int value; // 符号关联值
+        public string __name;
+        public Symbol __parent;
+        
+        public int code; // 符号的单词编码//v
+        public int align; // 符号关联的寄存器
+        public int value; // 符号关联值//c
         public Type type; // 符号类型
         public Symbol next; // 关联的其它符号，结构体定义关联成员变量符号，函数定义关联参数符号
         public Symbol prev_tok; // 指向前一定义的同名符号
+        public override string ToString(){
+            return $"name:{__name} code:{code} value:{value} type:{type}";
+        }
+    }
+
+   
+
+    public class SymDomain : Symbol {
+        public List<SymVar> variables = new List<SymVar>();
+        public List<SymDomain> domains = new List<SymDomain>();
+        public List<OpCode> _opCodes = new List<OpCode>();
+        public void AddVariable(SymVar val){ 
+            variables.Add(val);
+        }
+        public void AddDomain(SymDomain val){ 
+            domains.Add(val);
+        }
+    }
+    public class SymFunction : SymDomain {
+        public List<SymVar> funcParams = new List<SymVar>();
+
+        public void AddParam(SymVar val){
+            funcParams.Add(val);
+        }
+    }
+    public class SymClass : Symbol {
+        public List<SymVar> variables = new List<SymVar>();
+        public List<SymFunction> functions = new List<SymFunction>();
+        public void AddVariable(SymVar val){ 
+            variables.Add(val);
+        }
+        public void AddFunction(SymFunction val){ 
+            functions.Add(val);
+        }
+    }
+    public class OpCode { }
+    public class SymVar : Symbol {
+        public SymClass type;
+        public object _value;
+        
     }
 
     public class Section {
@@ -55,7 +101,7 @@ namespace LockstepECL {
 
 
     public class Operand {
-       public Type type; // 数据类型
+       public Type type = new Type(); // 数据类型
        public ushort r; // 寄存器或存储类型
        public int value; // 常量值，适用于SC_GLOBAL
        public Symbol sym; // 符号，适用于(SC_SYM | SC_GLOBAL)

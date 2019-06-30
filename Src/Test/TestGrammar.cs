@@ -4,6 +4,7 @@ namespace LockstepECL {
     public class TestGrammar : TestLex {
 
         public void ShowGrammarResult(){
+            lex.GrammarInit();
             lex.GetChar();
             lex.GetToken();
             lex.TranslationUnit();
