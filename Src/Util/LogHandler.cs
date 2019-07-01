@@ -21,7 +21,7 @@ public class LogHandler {
         int colNum, params object[] args){
         string lineInfo = (lineNum >= 0 ? ":" + lineNum.ToString() : "") +
                           (colNum >= 0 ? ", " + colNum.ToString() : "");
-        Log(level, $"{stage} {level} : {fileName} {lineInfo} :  {string.Format(GetFormat(type), args)}\n");
+        Log(level, $"{stage} {level}_{((int)type)}: {fileName} {lineInfo} :  {string.Format(GetFormat(type), args)}\n");
         if (level == EErrorLevel.ERROR)
             Exit();
     }

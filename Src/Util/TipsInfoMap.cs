@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 public enum ETipsType {
     IllegalEscapeCharacter,
     MissChar,
@@ -25,7 +23,7 @@ public enum ETipsType {
 
 
 public class TipsInfoMap {
-    public static Dictionary<ETipsType, string> FormatInfo = new Dictionary<ETipsType, string>() {
+    public static System.Collections.Generic.Dictionary<ETipsType, string> FormatInfo = new System.Collections.Generic.Dictionary<ETipsType, string>() {
         {ETipsType.IllegalEscapeCharacter, "Illegal escape character: \'\\{0}\'"},
         {ETipsType.MissChar, "miss character {0}"},
         {ETipsType.ErrorChar, "error character {0}"},

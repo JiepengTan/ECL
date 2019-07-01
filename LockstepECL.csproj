@@ -66,7 +66,7 @@
     <Compile Include="Src\TypeInfos\SymFunction.cs" />
     <Compile Include="Src\TypeInfos\SymStruct.cs" />
     <Compile Include="Src\TypeInfos\SymVar.cs" />
-    <Compile Include="Src\Util\Error.cs" />
+    <Compile Include="Src\Util\LogHandler.cs" />
     <Compile Include="Src\Util\TipsInfoMap.cs" />
     <Compile Include="Src\Util\Tools.cs" />
     <Compile Include="Src\Lex\Lex.cs" />
