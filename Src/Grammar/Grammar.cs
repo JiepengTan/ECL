@@ -26,9 +26,9 @@ namespace LockstepECL {
         }
 
         void coffsym_add_update(Symbol s, int val, int sec_index, short type, char StorageClass){ }
-        void init_variable(Type type, Section sec, int c, int v){ }
+        void init_variable( Section sec, int c, int v){ }
 
-        void init_array(Type type, Section sec, int c, int v){
+        void init_array( Section sec, int c, int v){
             //memcpy(sec.data + c, tkstr.data, tkstr.count);//TODO
         }
 
@@ -522,7 +522,6 @@ namespace LockstepECL {
 
         SymFunction parameter_type_list(int func_call, int tokenId){
             int n = 0;
-            Type pt = new Type();
 
             GetToken();
             Symbol first = null;
@@ -917,7 +916,6 @@ namespace LockstepECL {
 
         void primary_expression(){
             int t = 0, r = 0, addr = 0;
-            Type type = new Type();
             Symbol s;
             Section sec = new Section();
             switch (curTokenId) {
@@ -928,8 +926,6 @@ namespace LockstepECL {
                     break;
                 case TK_CSTR:
                     t = T_CHAR;
-                    type.typeId = t;
-                    type.typeId |= T_ARRAY;
                     initializer(true, addr);
                     break;
                 case TK_OPENPA:
