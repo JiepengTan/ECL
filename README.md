@@ -39,7 +39,7 @@ struct_declaration_list ::= struct_declaration { struct_declaration }
 
 struct_declaration ::= type_specifier struct_declarator_list TK_SEMICOLON
 
-struct_declarator_list ::= declarator{TK_COMMAdeclarator}
+struct_declarator_list ::= declarator{TK_COMMA declarator}
 
 declarator ::= {pointer} {function_calling_convention} {struct_member_alignment} direct_declarator
 
@@ -47,14 +47,14 @@ pointer ::= TK_STAR
 
 function_calling_convention ::= KW_CDECL|KW_STDCALL
 
-struct_member_alignment ::= KW_ALIGNTK_OPENPATK_CINTTK_CLOSEPA
+struct_member_alignment ::= KW_ALIGN TK_OPENPA TK_CINT TK_CLOSEPA
 
 direct_declarator ::=   IDENTIFIERdirect_declarator_postfix
 
-direct_declarator_ postfix ::=  {TK_OPENBRTK_CINTTK_CLOSEBR
-    | TK_OPENBRTK_CLOSEBR
-    | TK_OPENPAparameter_type_listTK_CLOSEPA 
-    | TK_OPENPATK_CLOSEPA}
+direct_declarator_ postfix ::=  {TK_OPENBR TK_CINT TK_CLOSEBR
+    | TK_OPENBR TK_CLOSEBR
+    | TK_OPENPA parameter_type_list TK_CLOSEPA 
+    | TK_OPENPA TK_CLOSEPA}
 
 parameter_type_list ::= parameter_list
     |parameter_listTK_COMMATK_ELLIPSIS
@@ -113,7 +113,7 @@ unary_expression ::=  postfix_expression
     | TK_STAR unary_expression 
     | TK_PLUS unary_expression 
     | TK_MINUS unary_expression 
-    | KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA 
+    | KW_SIZEOF TK_OPENPA type_specifier TK_ CLOSEPA 
  
 sizeof_expression ::=  
     KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA
