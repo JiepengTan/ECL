@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using static LogHandler;
 using static LockstepECL.Define;
 using static ETipsType;
 
 namespace LockstepECL {
     public class BaseParser {
-        public int curTokenId;
         protected LogHandler _logHandler = new LogHandler();
-
         public string fileName = "";
         public int lineNum;
         public int colNum = 0;
@@ -26,7 +25,87 @@ namespace LockstepECL {
         }
     }
 
-    public partial class Lex : BaseParser {
+    public interface ILex {
+        LexInfos LexInfos { get; }
+        void Init(Func<char> funcGetChar, Action<char> funcUnChar, Action<char> funcDealSpace,Action funcSyntaxIndent);
+        void Reset();
+        void DoParse();
+    }
+
+    public class LexInfos {
+        public struct Info {
+            public int line;
+            public int tokenId;
+            public object tokenVal;
+
+            public override string ToString(){
+                return $"line:{line} tokenId{tokenId}";
+            }
+        }
+
+        public LexInfos(List<Token> tokenTable){
+            this.tokenTable = tokenTable;
+            tokenInfos = new List<Info>();
+        }
+
+        public List<Token> tokenTable;
+        public List<Info> tokenInfos;
+
+        public void OnToken(int line, int tokenId, object tokenVal){
+            tokenInfos.Add(new Info() {line = line, tokenId = tokenId, tokenVal = tokenVal});
+        }
+
+        private int _curIdx = -1;
+
+        public void GetToken(){
+            if (_curIdx >= tokenInfos.Count) {
+                return;
+            }
+
+            _curIdx++;
+        }
+
+        public void SkipToken(){
+            GetToken();
+        }
+
+        public void GetTokenInfo(int tokenId){
+            
+        }
+
+        public string GetTokenName(int tokenId){
+            return tokenId > tokenTable.Count ? "" : tokenTable[tokenId].name;
+        }
+
+        public string GetTokenDebugString(){
+            var tokenId = tokenInfos[_curIdx].tokenId;
+            if (tokenId >= TK_CINT && tokenId <= TK_CSTR)
+                return tokenInfos[_curIdx].tokenVal.ToString();
+            else
+                return tokenTable[tokenId].name;
+        }
+
+        public int TokenTableCount => tokenTable.Count;
+        public int curTokenId => tokenInfos[_curIdx].tokenId;
+        public object curTokenVal => tokenInfos[_curIdx].tokenVal;
+
+        public override string ToString(){
+            int curLine = 0;
+            StringBuilder sb = new StringBuilder();
+            foreach (var info in tokenInfos) {
+                sb.Append(tokenTable[info.tokenId].name + " ");
+                if (info.line != curLine) {
+                    curLine = info.line;
+                    sb.AppendLine();
+                }
+            }
+
+            return sb.ToString();
+        }
+    }
+
+    public partial class Lex : BaseParser, ILex {
+        public int curTokenId;
         public Dictionary<string, Token> str2Token;
         public List<Token> allTokens;
         public DynString sourcestr;
@@ -35,56 +114,53 @@ namespace LockstepECL {
         public char curChar;
         private bool hasTokenInLine = false; // cur line has some identifier 
 
-        public Token __debugToken {
-            get { return allTokens[curTokenId]; }
-        }
+        public Token __debugToken => allTokens[curTokenId];
 
         private Action<char> FuncDealSpace;
         private Action<char> FuncUnChar;
         private Func<char> FuncGetChar;
+        public Action FuncSyntaxIndent;
 
-        private const char CH_EOF = '\0';
+        public LexInfos LexInfos { get; private set; }
 
-        public override string ToString(){
-            return $"line:{lineNum} col:{colNum} ch:{curChar} id:{curTokenId} tkstr:{tkstr.Data}";
-        }
 
-        public void UnChar(char ch){
-            FuncUnChar(ch);
-            --colNum;
-        }
-        public void LexParse(){
-            GetChar();
-            do {
-                GetToken();
-            } while (curTokenId != Define.TK_EOF);
-        }
-        public void GetChar(){
-            curChar = FuncGetChar(); //文件尾返回EOF，其它返回实际字节值		
-            ++colNum;
-        }
-
-        void OnReadLine(){
-            hasTokenInLine = false;
-            colNum = 0;
-            lineNum++;
-        }
-
-        public void Init(Func<char> funcGetChar, Action<char> funcUnChar, Action<char> funcDealSpace){
+        public void Init(
+            Func<char> funcGetChar, Action<char> funcUnChar,
+            Action<char> funcDealSpace,Action funcSyntaxIndent
+        ){
             this.FuncUnChar = funcUnChar;
             this.FuncGetChar = funcGetChar;
             this.FuncDealSpace = funcDealSpace;
+            this.FuncSyntaxIndent = funcSyntaxIndent;
+            Reset();
+        }
+
+        public void Reset(){
             str2Token = new Dictionary<string, Token>();
             allTokens = new List<Token>();
             sourcestr = new DynString();
             tkstr = new DynString();
-
+            LexInfos = new LexInfos(allTokens);
             allTokens.AddRange(keywords);
             for (int i = 0; i < keywords.Length; i++) {
                 str2Token.Add(keywords[i].name, keywords[i]);
             }
         }
 
+        public void DoParse(){
+            GetChar();
+            do {
+                GetToken();
+            } while (curTokenId != Define.TK_EOF);
+
+        }
+
+
+        void OnReadLine(){
+            hasTokenInLine = false;
+            colNum = 0;
+            lineNum++;
+        }
 
         Token FindToken(string p){
             if (str2Token.TryGetValue(p, out var tk)) {
@@ -105,16 +181,7 @@ namespace LockstepECL {
             return tp;
         }
 
-        bool IsLetter(char c){
-            return (c >= 'a' && c <= 'z') ||
-                   (c >= 'A' && c <= 'Z') ||
-                   c == '_';
-        }
-
-        bool IsDigit(char c){
-            return c >= '0' && c <= '9';
-        }
-
+        #region Parse Func
 
         Token ParseIdentifier(){
             tkstr.Clear();
@@ -247,6 +314,47 @@ namespace LockstepECL {
             }
         }
 
+        void ParseCommentCppStyle(){
+            while (curChar != '\n') {
+                GetChar();
+            }
+
+            if (hasTokenInLine) {
+                FuncDealSpace(curChar);
+            }
+
+            OnReadLine();
+            GetChar();
+        }
+
+
+        void ParseCommentCStyle(){
+            GetChar();
+            do {
+                do {
+                    if (curChar == '\n' || curChar == '*' || curChar == '\0')
+                        break;
+                    else
+                        GetChar();
+                } while (true);
+
+                if (curChar == '\n') {
+                    OnReadLine();
+                    GetChar();
+                }
+                else if (curChar == '*') {
+                    GetChar();
+                    if (curChar == '/') {
+                        GetChar();
+                        return;
+                    }
+                }
+                else {
+                    Error(ETipsType.MissChar, "* or //");
+                    return;
+                }
+            } while (true);
+        }
 
         void Preprocess(){
             while (true) {
@@ -272,65 +380,29 @@ namespace LockstepECL {
             }
         }
 
-        private void ParseCommentCppStyle(){
-            while (curChar != '\n') {
-                GetChar();
-            }
+        #endregion
 
-            if (hasTokenInLine) {
-                FuncDealSpace(curChar);
-            }
+        #region Reader Func
 
-            OnReadLine();
-            GetChar();
+        void UnChar(char ch){
+            FuncUnChar(ch);
+            --colNum;
         }
 
-
-        void ParseCommentCStyle(){
-            GetChar();
-            do {
-                do {
-                    if (curChar == '\n' || curChar == '*' || curChar == CH_EOF)
-                        break;
-                    else
-                        GetChar();
-                } while (true);
-
-                if (curChar == '\n') {
-                    OnReadLine();
-                    GetChar();
-                }
-                else if (curChar == '*') {
-                    GetChar();
-                    if (curChar == '/') {
-                        GetChar();
-                        return;
-                    }
-                }
-                else {
-                    Error(ETipsType.MissChar, "* or //");
-                    return;
-                }
-            } while (true);
+        void GetChar(){
+            curChar = FuncGetChar(); //文件尾返回EOF，其它返回实际字节值		
+            ++colNum;
         }
 
-        public void SkipToken(int v){
-            if (curTokenId != v)
-                Error(ETipsType.ExpectToken, GetTokenName(v));
+        public void SkipToken(int tokenId){
+            if (curTokenId != tokenId)
+                Error(ETipsType.ExpectToken, (allTokens[tokenId]).name);
             GetToken();
-        }
-
-        public string GetTokenName(int v){
-            if (v > allTokens.Count)
-                return null;
-            else if (v >= TK_CINT && v <= TK_CSTR)
-                return sourcestr.Data;
-            else
-                return (allTokens[v]).name;
         }
 
         public void GetToken(){
             Preprocess();
+            var rawLine = lineNum;
             hasTokenInLine = true;
             switch (curChar) {
                 case 'a':
@@ -529,6 +601,7 @@ namespace LockstepECL {
                 case '\"': {
                     ParseString(curChar);
                     curTokenId = TK_CSTR;
+                    tkvalue = sourcestr.Data;
                     break;
                 }
                 case '\0':
@@ -538,10 +611,41 @@ namespace LockstepECL {
                     //上面字符以外的字符，只允许出现在源码字符串，不允许出现的源码的其它位置
                     Error(ETipsType.ErrorChar, curChar.ToString());
                     GetChar();
-                    break;
+                    return;
             }
 
-            syntax_indent();
+            LexInfos.OnToken(rawLine, curTokenId, tkvalue);
+            SyntaxIndent();
+        }
+
+
+        void SyntaxIndent(){
+            FuncSyntaxIndent?.Invoke();
+        }
+        
+        public string GetTokenName(int v){
+            if (v > allTokens.Count)
+                return null;
+            else if (v >= TK_CINT && v <= TK_CSTR)
+                return sourcestr.Data;
+            else
+                return (allTokens[v]).name;
+        }
+
+        #endregion
+
+        public override string ToString(){
+            return $"line:{lineNum} col:{colNum} ch:{curChar} id:{curTokenId} tkstr:{tkstr.Data}";
+        }
+
+        static bool IsLetter(char c){
+            return (c >= 'a' && c <= 'z') ||
+                   (c >= 'A' && c <= 'Z') ||
+                   c == '_';
+        }
+
+        static bool IsDigit(char c){
+            return c >= '0' && c <= '9';
         }
     }
 }
