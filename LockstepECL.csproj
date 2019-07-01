@@ -47,6 +47,7 @@
     <Compile Include="Src\CodeGen\OpCode.cs" />
     <Compile Include="Src\CodeGen\PEInfo.cs" />
     <Compile Include="Src\CodeGen\Section.cs" />
+    <Compile Include="Src\Common\BaseParser.cs" />
     <Compile Include="Src\Common\ConstDefine.cs" />
     <Compile Include="Src\Common\Define.cs" />
     <Compile Include="Src\Common\EKeyWord.cs" />
@@ -58,7 +59,9 @@
     <Compile Include="Src\Grammar\Grammar.cs" />
     <Compile Include="Src\Grammar\ValExtension.cs" />
     <Compile Include="Src\Lex\DynString.cs" />
+    <Compile Include="Src\Lex\ILex.cs" />
     <Compile Include="Src\Lex\InputStream.cs" />
+    <Compile Include="Src\Lex\LexInfos.cs" />
     <Compile Include="Src\Test\TestGrammar.cs" />
     <Compile Include="Src\Test\TestLex.cs" />
     <Compile Include="Src\TypeInfos\Symbol.cs" />

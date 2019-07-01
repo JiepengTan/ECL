@@ -1,109 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using static LogHandler;
 using static LockstepECL.Define;
 using static ETipsType;
 
 namespace LockstepECL {
-    public class BaseParser {
-        protected LogHandler _logHandler = new LogHandler();
-        public string fileName = "";
-        public int lineNum;
-        public int colNum = 0;
-
-        public virtual void Warning(ETipsType type, params object[] args){
-            _logHandler.HandlerLog(EWorkStage.COMPILE, EErrorLevel.WARNING, type, fileName, lineNum, colNum, args);
-        }
-
-        public virtual void Error(ETipsType type, params object[] args){
-            _logHandler.HandlerLog(EWorkStage.COMPILE, EErrorLevel.ERROR, type, fileName, lineNum, colNum, args);
-        }
-
-        public void DumpErrorInfo(){
-            _logHandler.DumpErrorInfo();
-        }
-    }
-
-    public interface ILex {
-        LexInfos LexInfos { get; }
-        void Init(Func<char> funcGetChar, Action<char> funcUnChar, Action<char> funcDealSpace,Action funcSyntaxIndent);
-        void Reset();
-        void DoParse();
-    }
-
-    public class LexInfos {
-        public struct Info {
-            public int line;
-            public int tokenId;
-            public object tokenVal;
-
-            public override string ToString(){
-                return $"line:{line} tokenId{tokenId}";
-            }
-        }
-
-        public LexInfos(List<Token> tokenTable){
-            this.tokenTable = tokenTable;
-            tokenInfos = new List<Info>();
-        }
-
-        public List<Token> tokenTable;
-        public List<Info> tokenInfos;
-
-        public void OnToken(int line, int tokenId, object tokenVal){
-            tokenInfos.Add(new Info() {line = line, tokenId = tokenId, tokenVal = tokenVal});
-        }
-
-        private int _curIdx = -1;
-
-        public void GetToken(){
-            if (_curIdx >= tokenInfos.Count) {
-                return;
-            }
-
-            _curIdx++;
-        }
-
-        public void SkipToken(){
-            GetToken();
-        }
-
-        public void GetTokenInfo(int tokenId){
-            
-        }
-
-        public string GetTokenName(int tokenId){
-            return tokenId > tokenTable.Count ? "" : tokenTable[tokenId].name;
-        }
-
-        public string GetTokenDebugString(){
-            var tokenId = tokenInfos[_curIdx].tokenId;
-            if (tokenId >= TK_CINT && tokenId <= TK_CSTR)
-                return tokenInfos[_curIdx].tokenVal.ToString();
-            else
-                return tokenTable[tokenId].name;
-        }
-
-        public int TokenTableCount => tokenTable.Count;
-        public int curTokenId => tokenInfos[_curIdx].tokenId;
-        public object curTokenVal => tokenInfos[_curIdx].tokenVal;
-
-        public override string ToString(){
-            int curLine = 0;
-            StringBuilder sb = new StringBuilder();
-            foreach (var info in tokenInfos) {
-                sb.Append(tokenTable[info.tokenId].name + " ");
-                if (info.line != curLine) {
-                    curLine = info.line;
-                    sb.AppendLine();
-                }
-            }
-
-            return sb.ToString();
-        }
-    }
-
     public partial class Lex : BaseParser, ILex {
         public int curTokenId;
         public Dictionary<string, Token> str2Token;
