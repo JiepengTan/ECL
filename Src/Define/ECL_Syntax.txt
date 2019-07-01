@@ -1,10 +1,11 @@
+//v0.0.1 基础c 语法
 external_declaration ::= function_definition
     | declaration
 
 function_definition ::= type_specifier declaratorfuncbody
 
 declaration ::=  type_specifier TK_SEMICOLON
-	| type_specifier init_declarator_list TK_SEMICOLON
+    | type_specifier init_declarator_list TK_SEMICOLON
 
 init_declarator_list ::= init_declarator {TK_COMMA init_declarator}
 
@@ -13,7 +14,7 @@ init_declarator ::= declarator|declarator TK_ASSIGNinitializer
 initializer ::= assignment_expression
 
 type_specifier ::= KW_STRING   
-	| KW_BOOL      
+    | KW_BOOL      
     | KW_FLOAT     
     | KW_CHAR      
     | KW_INT8      
@@ -24,11 +25,11 @@ type_specifier ::= KW_STRING
     | KW_UINT16    
     | KW_UINT32    
     | KW_UINT64    
-	| KW_VOID 
-	| struct_specifier
+    | KW_VOID 
+    | struct_specifier
 
 struct_specifier ::=  KW_STRUCT IDENTIFIER TK_BEGIN struct_declaration_list _END 
-	| KW_STRUCT IDENTIFIER
+    | KW_STRUCT IDENTIFIER
 
 struct_declaration_list ::= struct_declaration { struct_declaration }
 
@@ -47,9 +48,9 @@ struct_member_alignment ::= KW_ALIGNTK_OPENPATK_CINTTK_CLOSEPA
 direct_declarator ::=   IDENTIFIERdirect_declarator_postfix
 
 direct_declarator_ postfix ::=  {TK_OPENBRTK_CINTTK_CLOSEBR
- 	| TK_OPENBRTK_CLOSEBR
-	| TK_OPENPAparameter_type_listTK_CLOSEPA 
-	| TK_OPENPATK_CLOSEPA}
+    | TK_OPENBRTK_CLOSEBR
+    | TK_OPENPAparameter_type_listTK_CLOSEPA 
+    | TK_OPENPATK_CLOSEPA}
 
 parameter_type_list ::= parameter_list
     |parameter_listTK_COMMATK_ELLIPSIS
@@ -77,55 +78,55 @@ continue_statement ::= KW_CONTINUE TK_SEMICOLON
 break_statement ::= KW_BREAK TK_SEMICOLON
 
 return_statement ::= KW_RETURN TK_SEMICOLON
- 	| KW_RETURN expression TK_SEMICOLON
+    | KW_RETURN expression TK_SEMICOLON
 
 expression_statement ::= TK_SEMICOLON 
     | expression TK_SEMICOLON 
 
 expression ::= assignment_expression{TK_COMMAassignment_expression}
 assignment_expression ::=  equality_expression
-	| unary_expression TK_ASSIGN equality_expression 
+    | unary_expression TK_ASSIGN equality_expression 
 equality_expression  ::= relational_expression {TK_EQ relational_expression | TK_NEQ relational_expression}
 
 relational_expression ::= additive_expression {
-	TK_LT additive_expression 
- 	| TK_GT additive_expression 
- 	| TK_LEQ additive_expression 
- 	| TK_GEQ additive_expression
+    TK_LT additive_expression 
+    | TK_GT additive_expression 
+    | TK_LEQ additive_expression 
+    | TK_GEQ additive_expression
     }
  
 additive_expression ::=  multiplicative_expression 
- 		{TK_PLUS multiplicative_expression
- 		TK_MINUS multiplicative_expression}
+    {TK_PLUS multiplicative_expression
+    TK_MINUS multiplicative_expression}
  
 multiplicative_expression ::= unary_expression
- 	{TK_STAR   unary_expression 
- 	| TK_DIVIDE unary_expression  
- 	| TK_MOD   unary_expression }
+     {TK_STAR   unary_expression 
+    | TK_DIVIDE unary_expression  
+    | TK_MOD   unary_expression }
  
 unary_expression ::=  postfix_expression 
- 	| TK_AND unary_expression 
- 	| TK_STAR unary_expression 
- 	| TK_PLUS unary_expression 
- 	| TK_MINUS unary_expression 
- 	| KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA 
+    | TK_AND unary_expression 
+    | TK_STAR unary_expression 
+    | TK_PLUS unary_expression 
+    | TK_MINUS unary_expression 
+    | KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA 
  
 sizeof_expression ::=  
- 		KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA
+    KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA
  
 postfix_expression ::=   primary_expression 
- 	{TK_OPENBR expression TK_CLOSEBR 
- 	| TK_OPENPA TK_CLOSEPA
- 	| TK_OPENP Aargument_expression_list TK_CLOSEPA
- 	| TK_DOT IDENTIFIER 
- 	| TK_POINTSTO IDENTIFIER}
+    {TK_OPENBR expression TK_CLOSEBR 
+    | TK_OPENPA TK_CLOSEPA
+    | TK_OPENP Aargument_expression_list TK_CLOSEPA
+    | TK_DOT IDENTIFIER 
+    | TK_POINTSTO IDENTIFIER}
 
 primary_expression ::= IDENTIFIER
     | TK_BOOL
     | TK_FLOAT
- 	| TK_CINT
- 	| TK_CSTR
- 	| TK_CCHAR
- 	| TK_OPENPA expression TK_CLOSEPA
+    | TK_CINT
+    | TK_CSTR
+    | TK_CCHAR
+    | TK_OPENPA expression TK_CLOSEPA
 
-argument_expression_list  ::= assignment_expression	{TK_COMMA assignment_expression}
+argument_expression_list  ::= assignment_expression {TK_COMMA assignment_expression}
