@@ -3,68 +3,64 @@ using System.Collections.Generic;
 using System.Text;
 using LockstepECL;
 
-public static class ErrorHandler {
-    public const int STAGE_COMPILE = 0;
-    public const int STAGE_LINK = 1;
-    public const int LEVEL_WARNING = 0;
-    public const int LEVEL_ERROR = 1;
+public struct LogInfo {
+    public EErrorLevel level;
+    public string info;
+}
 
-    public static Lex curLex;
 
-    private struct LogInfo {
-        public int level;
-        public string info;
+public class LogHandler {
+    private List<LogInfo> _allInfos = new List<LogInfo>();
+    public LogInfo[] AllLogInfo => _allInfos.ToArray();
+
+    public void ClearLog(){
+        _allInfos.Clear();
     }
 
-    private static List<LogInfo> allInfos = new List<LogInfo>();
-    
-    public static void Warning(string format, params object[] args){
-        HandleException(STAGE_COMPILE, LEVEL_WARNING, format, args);
-    }
-
-    public static void Error(string format, params object[] args){
-        HandleException(STAGE_COMPILE, LEVEL_ERROR, format, args);
-    }
-
-    public static void LinkError(string format, params object[] args){
-        HandleException(STAGE_LINK, LEVEL_ERROR, format, args);
-    }
-
-    private static void HandleException(int stage, int level, string format, params object[] args){
-        if (stage == STAGE_COMPILE) {
-            if (level == LEVEL_WARNING)
-                Log(LEVEL_WARNING, $"Compile Warning :{curLex.fileName}(line:{curLex.lineNum} col:{curLex.colNum}) :  {string.Format(format, args)}\n");
-            else {
-                Log(LEVEL_ERROR, $"Compile Warning :{curLex.fileName}(line:{curLex.lineNum} col:{curLex.colNum}) :  {string.Format(format, args)}\n");
-                Exit();
-            }
-        }
-        else {
-            Log(LEVEL_ERROR, "Link Error: {0}!\n", string.Format(format, args));
+    public void HandlerLog(EWorkStage stage, EErrorLevel level, ETipsType type, string fileName, int lineNum,
+        int colNum, params object[] args){
+        string lineInfo = (lineNum >= 0 ? ":" + lineNum.ToString() : "") +
+                          (colNum >= 0 ? ", " + colNum.ToString() : "");
+        Log(level, $"{stage} {level} : {fileName} {lineInfo} :  {string.Format(GetFormat(type), args)}\n");
+        if (level == EErrorLevel.ERROR)
             Exit();
-        }
     }
 
-
-    static void Log(int level, string format, params object[] args){
-        allInfos.Add(new LogInfo() {level = level, info = string.Format(format, args)});
-    }
-
-    public static void DumpErrorInfo(){
+    public void DumpErrorInfo(){
         var defaultColor = Console.ForegroundColor;
-        foreach (var line in allInfos) {
-            if (line.level == LEVEL_WARNING) {
-                Console.ForegroundColor = ConsoleColor.Yellow;
+        var curColor = defaultColor;
+        foreach (var line in _allInfos) {
+            ConsoleColor? color = null;
+            if (line.level == EErrorLevel.WARNING) {
+                color = ConsoleColor.Yellow;
             }
-            else if (line.level == LEVEL_ERROR) {
-                Console.ForegroundColor = ConsoleColor.Red;
+            else if (line.level == EErrorLevel.ERROR) {
+                color = ConsoleColor.Red;
             }
+
+            if (color.HasValue && color.Value != curColor) {
+                curColor = color.Value;
+                Console.ForegroundColor = color.Value;
+            }
+
             Console.WriteLine(line.info);
         }
 
         Console.ForegroundColor = defaultColor;
-        allInfos.Clear();
+        _allInfos.Clear();
     }
 
-    public static void Exit(){ }
+    void Log(EErrorLevel level, string format, params object[] args){
+        _allInfos.Add(new LogInfo() {level = level, info = string.Format(format, args)});
+    }
+
+    private string GetFormat(ETipsType type){
+        if (TipsInfoMap.FormatInfo.TryGetValue(type, out var format)) {
+            return format;
+        }
+
+        Log(0, "ERROR!!! miss errorType " + type);
+        return "";
+    }
+    void Exit(){ }
 }

@@ -21,12 +21,19 @@ namespace LockstepECL {
         }
 
         public void ShowLexResult(){
-            lex.GetChar();
-            do {
-                lex.GetToken();
-            } while (lex.curTokenId != Define.TK_EOF);
+            try {
+                DoParse();
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+            }
+            finally {
+                lex.DumpErrorInfo();
+            }
+        }
 
-            Console.ForegroundColor = defaultColor;
+        public void DoParse(){
+            lex.LexParse();
             //Output($"\nTotalLineCount: {lex.lineNum}\n");
         }
 

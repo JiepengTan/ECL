@@ -1,23 +1,38 @@
 using System;
 using System.Collections.Generic;
-using static ErrorHandler;
+using static LogHandler;
 using static LockstepECL.Define;
+using static ETipsType;
 
 namespace LockstepECL {
-    public partial class Lex {
-        
+    public class BaseParser {
+        public int curTokenId;
+        protected LogHandler _logHandler = new LogHandler();
 
+        public string fileName = "";
+        public int lineNum;
+        public int colNum = 0;
 
+        public virtual void Warning(ETipsType type, params object[] args){
+            _logHandler.HandlerLog(EWorkStage.COMPILE, EErrorLevel.WARNING, type, fileName, lineNum, colNum, args);
+        }
+
+        public virtual void Error(ETipsType type, params object[] args){
+            _logHandler.HandlerLog(EWorkStage.COMPILE, EErrorLevel.ERROR, type, fileName, lineNum, colNum, args);
+        }
+
+        public void DumpErrorInfo(){
+            _logHandler.DumpErrorInfo();
+        }
+    }
+
+    public partial class Lex : BaseParser {
         public Dictionary<string, Token> str2Token;
         public List<Token> allTokens;
         public DynString sourcestr;
         public DynString tkstr;
         public object tkvalue;
         public char curChar;
-        public int curTokenId;
-        public int lineNum;
-        public int colNum = 0;
-        public string fileName = "";
         private bool hasTokenInLine = false; // cur line has some identifier 
 
         public Token __debugToken {
@@ -38,7 +53,12 @@ namespace LockstepECL {
             FuncUnChar(ch);
             --colNum;
         }
-
+        public void LexParse(){
+            GetChar();
+            do {
+                GetToken();
+            } while (curTokenId != Define.TK_EOF);
+        }
         public void GetChar(){
             curChar = FuncGetChar(); //文件尾返回EOF，其它返回实际字节值		
             ++colNum;
@@ -51,7 +71,6 @@ namespace LockstepECL {
         }
 
         public void Init(Func<char> funcGetChar, Action<char> funcUnChar, Action<char> funcDealSpace){
-            ErrorHandler.curLex = this;
             this.FuncUnChar = funcUnChar;
             this.FuncGetChar = funcGetChar;
             this.FuncDealSpace = funcDealSpace;
@@ -66,15 +85,6 @@ namespace LockstepECL {
             }
         }
 
-        public static void Expect(string msg){
-            Error("miss " + msg);
-        }
-
-        public void SkipToken(int v){
-            if (curTokenId != v)
-                Error("miss " + GetTokenName(v));
-            GetToken();
-        }
 
         Token FindToken(string p){
             if (str2Token.TryGetValue(p, out var tk)) {
@@ -138,7 +148,7 @@ namespace LockstepECL {
             }
 
             if (isFloat) {
-                tkvalue = (float)double.Parse(tkstr.Data);
+                tkvalue = (float) double.Parse(tkstr.Data);
             }
             else {
                 tkvalue = int.Parse(tkstr.Data);
@@ -197,9 +207,9 @@ namespace LockstepECL {
                         default:
                             c = curChar;
                             if (c >= '!' && c <= '~')
-                                Warning($"Illegal escape character: \'\\{c}\'");
+                                Warning(ETipsType.IllegalEscapeCharacter, c.ToString());
                             else
-                                Warning($"Illegal escape character: \'\\{c}\'");
+                                Warning(ETipsType.IllegalEscapeCharacter, c.ToString());
                             break;
                     }
 
@@ -298,10 +308,25 @@ namespace LockstepECL {
                     }
                 }
                 else {
-                    Error("Miss common character * or //");
+                    Error(ETipsType.MissChar, "* or //");
                     return;
                 }
             } while (true);
+        }
+
+        public void SkipToken(int v){
+            if (curTokenId != v)
+                Error(ETipsType.ExpectToken, GetTokenName(v));
+            GetToken();
+        }
+
+        public string GetTokenName(int v){
+            if (v > allTokens.Count)
+                return null;
+            else if (v >= TK_CINT && v <= TK_CSTR)
+                return sourcestr.Data;
+            else
+                return (allTokens[v]).name;
         }
 
         public void GetToken(){
@@ -418,7 +443,7 @@ namespace LockstepECL {
                         GetChar();
                     }
                     else
-                        Error("Unknown character" + "!");
+                        Error(ETipsType.ErrorChar, "!");
 
                     break;
                 case '<':
@@ -446,7 +471,7 @@ namespace LockstepECL {
                     if (curChar == '.') {
                         GetChar();
                         if (curChar != '.')
-                            Error("Unknown character " + curChar);
+                            Error(ETipsType.ErrorChar, curChar.ToString());
                         else
                             curTokenId = TK_ELLIPSIS;
                         GetChar();
@@ -510,21 +535,13 @@ namespace LockstepECL {
                     curTokenId = TK_EOF;
                     break;
                 default:
-                    Error($"Unknown character:{curChar}"); //上面字符以外的字符，只允许出现在源码字符串，不允许出现的源码的其它位置
+                    //上面字符以外的字符，只允许出现在源码字符串，不允许出现的源码的其它位置
+                    Error(ETipsType.ErrorChar, curChar.ToString());
                     GetChar();
                     break;
             }
 
             syntax_indent();
-        }
-
-        public string GetTokenName(int v){
-            if (v > allTokens.Count)
-                return null;
-            else if (v >= TK_CINT && v <= TK_CSTR)
-                return sourcestr.Data;
-            else
-                return (allTokens[v]).name;
         }
     }
 }

@@ -49,12 +49,12 @@
     <Compile Include="Src\CodeGen\Section.cs" />
     <Compile Include="Src\Common\ConstDefine.cs" />
     <Compile Include="Src\Common\Define.cs" />
+    <Compile Include="Src\Common\EKeyWord.cs" />
     <Compile Include="Src\Common\Enums\EErrorLevel.cs" />
     <Compile Include="Src\Common\Enums\ELexState.cs" />
     <Compile Include="Src\Common\Enums\EWorkStage.cs" />
     <Compile Include="Src\Common\Operand.cs" />
     <Compile Include="Src\Common\Token.cs" />
-    <Compile Include="Src\Define\EKeyWord.cs" />
     <Compile Include="Src\Grammar\Grammar.cs" />
     <Compile Include="Src\Grammar\ValExtension.cs" />
     <Compile Include="Src\Lex\DynString.cs" />
@@ -67,6 +67,7 @@
     <Compile Include="Src\TypeInfos\SymStruct.cs" />
     <Compile Include="Src\TypeInfos\SymVar.cs" />
     <Compile Include="Src\Util\Error.cs" />
+    <Compile Include="Src\Util\TipsInfoMap.cs" />
     <Compile Include="Src\Util\Tools.cs" />
     <Compile Include="Src\Lex\Lex.cs" />
     <Compile Include="Src\Program.cs" />

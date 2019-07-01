@@ -44,7 +44,6 @@ namespace LockstepECL {
         void RegisterSymbol(int tokenId, Symbol val){
             if (tokenId == 0) return; //忽略匿名Domain
             if (tokenId2Symbol.ContainsKey(tokenId)) {
-                ErrorHandler.Error("重复定义同名成员 " + val.__name);
                 return;
             }
 

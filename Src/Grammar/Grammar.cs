@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using static ErrorHandler;
+using static LogHandler;
 using static LockstepECL.Define;
 using static LockstepECL.ConstDefine;
 
@@ -26,16 +26,16 @@ namespace LockstepECL {
         }
 
         void coffsym_add_update(Symbol s, int val, int sec_index, short type, char StorageClass){ }
-        void init_variable( Section sec, int c, int v){ }
+        void init_variable(Section sec, int c, int v){ }
 
-        void init_array( Section sec, int c, int v){
+        void init_array(Section sec, int c, int v){
             //memcpy(sec.data + c, tkstr.data, tkstr.count);//TODO
         }
 
 
         void check_lvalue(){
             //if(!(optop->r & SC_LVAL))
-            //Expect("左值");
+            // Error(ETipsType.ExpectToken__,"左值");
         }
 
         void backpatch(int t, int a){ }
@@ -172,24 +172,32 @@ namespace LockstepECL {
         }
 
         public void AddVariable(SymVar val){
-            _curDomain.AddVariable(val);
+            if (CheckAdd(val)) _curDomain.AddVariable(val);
         }
 
         public void AddFunction(SymFunction val){
-            _curDomain.AddFunction(val);
+            if (CheckAdd(val)) _curDomain.AddFunction(val);
         }
 
         public void AddParam(SymVar val){
-            _curDomain.AddParam(val);
+            if (CheckAdd(val)) _curDomain.AddParam(val);
         }
-
-        public void AddStruct(SymStruct val){
-            val.TypeId = CurStructMaxIdx++;
-            _curDomain.AddStruct(val);
-        }
-
         public void AddDomain(SymDomain val){
-            _curDomain.AddDomain(val);
+            if (CheckAdd(val)) _curDomain.AddDomain(val);
+        }
+        public void AddStruct(SymStruct val){
+            if (CheckAdd(val)) {
+                val.TypeId = CurStructMaxIdx++;
+                _curDomain.AddStruct(val);
+            }
+        }
+
+        bool CheckAdd(Symbol symbol){
+            if (_curDomain.FindSymbol(symbol.tokenId, false) != null) {
+                Error(ETipsType.DuplicateDefine, symbol.__name);
+                return false;
+            }
+            return true;
         }
 
 
@@ -199,7 +207,7 @@ namespace LockstepECL {
             Section sec = null;
 
             if (!type_specifier()) {
-                Expect("<类型区分符>");
+                Error(ETipsType.ExpectTypeIdentifier);
             }
 
             var firstTokenId = lastTokenId;
@@ -216,7 +224,7 @@ namespace LockstepECL {
                 {
                     var symFunc = sym as SymFunction;
                     if (symFunc == null)
-                        Expect("<函数定义>");
+                        Error(ETipsType.ExpectFunctionDefine);
                     AddFunction(symFunc);
                     symFunc.RetTypeId = firstTokenId;
                     funcbody(symFunc);
@@ -225,7 +233,7 @@ namespace LockstepECL {
 
                 if (sym is SymFunction) // 函数声明
                 {
-                    Error(" 不支持函数声明");
+                    Error(ETipsType.DontSurpportDeclareFunc);
                 }
                 else //变量声明
                 {
@@ -315,10 +323,7 @@ namespace LockstepECL {
                     break;
                 default:
                     var hasStruct = HasStruct(curTokenId);
-                    if (!hasStruct) {
-                        Error("Unknown type" + curTokenId);
-                    }
-                    else {
+                    if (hasStruct) {
                         lastTokenId = curTokenId;
                         curTypeId = T_CLASS;
                         type_found = true;
@@ -336,7 +341,7 @@ namespace LockstepECL {
 
         void AddStruct(int typeId, SymStruct structInfo){
             if (allTokens[typeId].symbol != null) {
-                Error("type already exist" + typeId + " name" + structInfo.__name);
+                Error(ETipsType.TypeAlreadyExist, typeId, structInfo.__name);
                 return;
             }
 
@@ -372,7 +377,7 @@ namespace LockstepECL {
             syntax_indent();
 
             if (typeId < TK_IDENT) // 关键字不能作为结构名称
-                Expect("结构体名");
+                Error(ETipsType.ExpectStruct);
             var sym = FindStruct(typeId);
             if (sym == null) {
                 curTypeId = KW_STRUCT;
@@ -469,7 +474,7 @@ namespace LockstepECL {
                     align = (int) tkvalue;
                 }
                 else
-                    Expect("整数常量");
+                    Error(ETipsType.ExpectConstInt);
 
                 SkipToken(TK_CLOSEPA);
                 if (align != 1 && align != 2 && align != 4)
@@ -487,7 +492,7 @@ namespace LockstepECL {
                 GetToken();
             }
             else {
-                Expect("标识符");
+                Error(ETipsType.ExpectIdentifier);
             }
 
             return direct_declarator_postfix(func_call, tokenId);
@@ -538,7 +543,7 @@ namespace LockstepECL {
 
             while (curTokenId != TK_CLOSEPA) {
                 if (!type_specifier()) {
-                    Error("无效类型标识符");
+                    Error(ETipsType.UnknowTypeIdentifier, curTokenId);
                 }
 
                 int isForceAlign = -1;
@@ -637,6 +642,7 @@ namespace LockstepECL {
                 domain = new SymDomain();
                 AddDomain(domain);
             }
+
             PushDomain(domain);
             GetToken();
             while (is_type_specifier(curTokenId)) {
@@ -726,7 +732,7 @@ namespace LockstepECL {
 
         void continue_statement(ref int csym){
             if (csym == -1)
-                Error("此处不能用continue");
+                Error(ETipsType.ErrorToken, "continue");
             csym = gen_jmpforward(csym);
             GetToken();
             syntax_state = SNTX_LF_HT;
@@ -735,7 +741,7 @@ namespace LockstepECL {
 
         void break_statement(ref int bsym){
             if (bsym == -1)
-                Error("此处不能用break");
+                Error(ETipsType.ErrorToken, "break");
             bsym = gen_jmpforward(bsym);
             GetToken();
             syntax_state = SNTX_LF_HT;
@@ -877,7 +883,7 @@ namespace LockstepECL {
 
             var size = type_size(ref align);
             if (size < 0)
-                Error("sizeof计算类型尺寸失败");
+                Error(ETipsType.SizeOfError, size);
             operand_push(int_type, size);
         }
 
@@ -893,10 +899,10 @@ namespace LockstepECL {
                     var symVar = optop.sym as SymVar;
                     var symStruct = (symVar?.parentDomain ?? global).FindSymbol(symVar.typeId, true) as SymStruct;
                     if (symStruct == null)
-                        Expect("结构体变量");
+                        Error(ETipsType.ExpectStructVar);
                     optop.sym = symStruct?.FindSymbol(curTokenId, false);
                     if (optop.sym == null)
-                        Error("没有此成员变量: %s", allTokens[curTokenId].name);
+                        Error(ETipsType.MemberNotExist, allTokens[curTokenId].name);
                     GetToken();
                 }
                 else if (curTokenId == TK_OPENBR) {
@@ -937,11 +943,11 @@ namespace LockstepECL {
                     t = curTokenId;
                     GetToken();
                     if (t < TK_IDENT)
-                        Expect("标识符或常量");
+                        Error(ETipsType.ExpectIdentifierOrConst);
                     s = FindVariable(t, true);
                     if (s == null) {
                         if (curTokenId != TK_OPENPA)
-                            Error("'%s'未声明 \n", allTokens[t].name);
+                            Error(ETipsType.VarNotDeclare, allTokens[t].name);
                         else {
                             s = FindFunction(t, true);
                         }
@@ -975,7 +981,7 @@ namespace LockstepECL {
             if (symFunction != null) {
                 Debug.Assert(symFunction != null, nameof(symFunction) + " != null");
                 if (nb_args != symFunction.ParamsCount)
-                    Error("实参个数少于函数形参个数"); //讲一下形参，实参
+                    Error(ETipsType.ParamsNumNotMatch); //讲一下形参，实参
             }
 
             SkipToken(TK_CLOSEPA);
