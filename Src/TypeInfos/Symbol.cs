@@ -11,7 +11,7 @@ namespace LockstepECL {
         public Symbol prev_tok; // 指向前一定义的同名符号
 
         public override string ToString(){
-            return $"name:{__name} type:{typeId} tokenId:{tokenId} memSize:{memSize} align:{align}";
+            return $"{__name}:{Type.__name} typeId:{typeId} tokenId:{tokenId} memSize:{memSize} align:{align}";
         }
 
     }

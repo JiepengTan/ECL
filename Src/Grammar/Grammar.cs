@@ -72,10 +72,48 @@ namespace LockstepECL {
     public unsafe partial class Grammar : BaseParser {
         public LexInfos LexInfos { get; private set; }
 
-        public int curTokenId ;
-        public object curTokenVal ;
+        public int curTokenId;
+        public object curTokenVal;
         public string __debugTokenName;
         public TypeRegister typeMgr;
+
+        public int TokenTableCount => LexInfos.TokenTableCount;
+        public Action FuncSyntaxIndent;
+        public int CurStructMaxIdx = (int) EBuildInTypes.NumOfEnum;
+
+        private int rsym = 0;
+        private int ind = 0;
+        private int loc = 0;
+        int func_begin_ind = 0;
+        int func_ret_sub = 0;
+        Operand[] opstack = new Operand[256];
+        Operand optop = new Operand();
+        public int syntax_state; //语法状态
+        public int syntax_level; //缩进级别
+        private SymDomain global;
+        public int lastTokenId;
+
+        private Stack<SymDomain> _domains = new Stack<SymDomain>();
+        private SymDomain _curDomain;
+
+        public void Init(LexInfos lexInfos, Action funcSyntaxIndent){
+            this.LexInfos = lexInfos;
+            this.filePath = lexInfos.filePath;
+            this.FuncSyntaxIndent = funcSyntaxIndent;
+            optop = opstack[0];
+            optop = new Operand();
+            global = new SymDomain();
+            PushDomain(global);
+            typeMgr = new TypeRegister(global);
+        }
+
+        public void TranslationUnit(){
+            GetToken();
+            while (curTokenId != TK_EOF) {
+                external_declaration(SC_GLOBAL);
+            }
+        }
+
         void SyntaxIndent(){
             FuncSyntaxIndent?.Invoke();
         }
@@ -108,36 +146,6 @@ namespace LockstepECL {
             return LexInfos.GetTokenDebugString();
         }
 
-        public int TokenTableCount => LexInfos.TokenTableCount;
-
-
-        public Action FuncSyntaxIndent;
-
-        public void Init(LexInfos lexInfos, Action funcSyntaxIndent){
-            typeMgr = new TypeRegister();
-            this.LexInfos = lexInfos;
-            this.filePath = lexInfos.filePath;
-            this.FuncSyntaxIndent = funcSyntaxIndent;
-            optop = opstack[0];
-        }
-
-
-        
-        public int CurStructMaxIdx = (int) EBuildInTypes.NumOfEnum;
-
-        private int rsym = 0;
-        private int ind = 0;
-        private int loc = 0;
-        int func_begin_ind = 0;
-        int func_ret_sub = 0;
-        Operand[] opstack = new Operand[256];
-        Operand optop = new Operand();
-        public int syntax_state; //语法状态
-        public int syntax_level; //缩进级别
-        private SymDomain global;
-        public int lastTokenId;
-        public Dictionary<int, Symbol> tokenId2Symbol = new Dictionary<int, Symbol>();
-
 
         int calc_align(int n, int align){
             return ((n + align - 1) & (~(align - 1)));
@@ -150,18 +158,42 @@ namespace LockstepECL {
                     align = CurSymbol.align;
                     return CurSymbol.align;
                 }
-                case T_STRING   :align = 4;return 4;
-                case T_BOOL     :align = 1;return 1;
-                case T_FLOAT    :align = 4;return 4;
-                case T_CHAR     :align = 1;return 1;
-                case T_INT8     :align = 1;return 1;
-                case T_INT16    :align = 2;return 2;
-                case T_INT32    :align = 4;return 4;
-                case T_INT64    :align = 8;return 8;
-                case T_UINT8    :align = 1;return 1;
-                case T_UINT16   :align = 2;return 2;
-                case T_UINT32   :align = 4;return 4;
-                case T_UINT64   :align = 8;return 8;
+                case T_STRING:
+                    align = 4;
+                    return 4;
+                case T_BOOL:
+                    align = 1;
+                    return 1;
+                case T_FLOAT:
+                    align = 4;
+                    return 4;
+                case T_CHAR:
+                    align = 1;
+                    return 1;
+                case T_INT8:
+                    align = 1;
+                    return 1;
+                case T_INT16:
+                    align = 2;
+                    return 2;
+                case T_INT32:
+                    align = 4;
+                    return 4;
+                case T_INT64:
+                    align = 8;
+                    return 8;
+                case T_UINT8:
+                    align = 1;
+                    return 1;
+                case T_UINT16:
+                    align = 2;
+                    return 2;
+                case T_UINT32:
+                    align = 4;
+                    return 4;
+                case T_UINT64:
+                    align = 8;
+                    return 8;
                 default:
                     align = 1;
                     return 1;
@@ -187,19 +219,6 @@ namespace LockstepECL {
             return _curDomain.FindSymbol(tokenId, isRecursiveFind) as SymVar;
         }
 
-
-        public void TranslationUnit(){
-            GetToken();
-            optop = new Operand();
-            global = new SymDomain();
-            PushDomain(global);
-            while (curTokenId != TK_EOF) {
-                external_declaration(SC_GLOBAL);
-            }
-        }
-
-        private Stack<SymDomain> _domains = new Stack<SymDomain>();
-        private SymDomain _curDomain;
 
         void PushDomain(SymDomain domain){
             domain.parentDomain = _curDomain;
@@ -230,7 +249,7 @@ namespace LockstepECL {
 
         public void AddStruct(SymStruct val){
             if (CheckAdd(val)) {
-                val.TypeId = CurStructMaxIdx++;
+                typeMgr.RegisterType(val);
                 _curDomain.AddStruct(val);
             }
         }
@@ -250,11 +269,11 @@ namespace LockstepECL {
             bool has_init = false;
             Section sec = null;
 
+            var firstTokenId = curTokenId;
             if (!type_specifier()) {
                 Error(ETipsType.ExpectTypeIdentifier);
             }
 
-            var firstTokenId = lastTokenId;
             if (curTypeId == T_STRUCT && curTokenId == TK_SEMICOLON) {
                 GetToken();
                 return;
@@ -270,6 +289,7 @@ namespace LockstepECL {
                     if (symFunc == null)
                         Error(ETipsType.ExpectFunctionDefine);
                     AddFunction(symFunc);
+                    sym.Type = typeMgr.TypeFunction;
                     symFunc.RetTypeId = firstTokenId;
                     funcbody(symFunc);
                     break;
@@ -282,10 +302,11 @@ namespace LockstepECL {
                 else //变量声明
                 {
                     var symVar = sym as SymVar;
-                    sym.__name = "var_" + (l == SC_GLOBAL ? "l_" : "g_") + GetTokenName(tokenId);
+                    sym.__name = GetTokenName(tokenId);
                     AddVariable(symVar);
-                    symVar.typeId = firstTokenId;
+                    symVar.tokenId = firstTokenId;
                     symVar.parentDomain = _curDomain;
+                    symVar.Type = FindStruct(firstTokenId);
                     r = 0;
                     if (symVar.isArray)
                         r |= SC_LVAL;
@@ -333,20 +354,19 @@ namespace LockstepECL {
         bool type_specifier(){
             bool type_found = false;
             curTypeId = 0;
-            lastTokenId = curTokenId;
             switch (curTokenId) {
-                case KW_STRING      :
-                case KW_BOOL        :
-                case KW_FLOAT       :
-                case KW_CHAR        :
-                case KW_INT8        :
-                case KW_INT16       :
-                case KW_INT32       :
-                case KW_INT64       :
-                case KW_UINT8       :
-                case KW_UINT16      :
-                case KW_UINT32      :
-                case KW_UINT64      :
+                case KW_STRING:
+                case KW_BOOL:
+                case KW_FLOAT:
+                case KW_CHAR:
+                case KW_INT8:
+                case KW_INT16:
+                case KW_INT32:
+                case KW_INT64:
+                case KW_UINT8:
+                case KW_UINT16:
+                case KW_UINT32:
+                case KW_UINT64:
                     curTypeId = T_STRING + (curTokenId - KW_STRING);
                     type_found = true;
                     syntax_state = SNTX_SP;
@@ -367,7 +387,6 @@ namespace LockstepECL {
                 default:
                     var hasStruct = HasStruct(curTokenId);
                     if (hasStruct) {
-                        lastTokenId = curTokenId;
                         curTypeId = T_STRUCT;
                         type_found = true;
                         syntax_state = SNTX_SP;
@@ -380,23 +399,10 @@ namespace LockstepECL {
             return type_found;
         }
 
-        void AddStruct(int tokenId, SymStruct structInfo){
-            if (tokenId2Symbol.ContainsKey(tokenId)) {
-                Error(ETipsType.TypeAlreadyExist, tokenId, structInfo.__name);
-                return;
-            }
-
-            structInfo.tokenId = tokenId;
-            tokenId2Symbol[tokenId] = structInfo;
-        }
-
         SymStruct FindStruct(int tokenId){
             if (tokenId >= TokenTableCount)
                 return null;
-            if (tokenId2Symbol.TryGetValue(tokenId, out var val)) {
-                return val as SymStruct;
-            }
-            return null;
+            return _curDomain.FindSymbol(tokenId, true) as SymStruct;
         }
 
 
@@ -424,7 +430,7 @@ namespace LockstepECL {
                 sym = new SymStruct();
                 sym.__name = GetTokenName(tokenId);
                 sym.align = 0;
-                AddStruct(tokenId, sym);
+                sym.tokenId = tokenId;
                 AddStruct(sym);
             }
 
@@ -456,12 +462,13 @@ namespace LockstepECL {
         }
 
         void struct_declaration(ref int maxalign, ref int offset, SymStruct curStruct){
+            var rawTokenId = curTokenId;
             type_specifier();
             while (true) {
                 int force_align = 0;
                 int align = 0;
                 int tokenId = 0;
-                var ss = declarator(ref tokenId, ref force_align) as SymVar;
+                var symVar = declarator(ref tokenId, ref force_align) as SymVar;
                 var size = type_size(ref align);
 
                 if ((force_align & ALIGN_SET) != 0)
@@ -471,10 +478,11 @@ namespace LockstepECL {
                 if (align > maxalign)
                     maxalign = align;
 
-                ss.offset = offset;
-                ss.tokenId = tokenId;
-                ss.__name = curStruct.__name + ":" + GetTokenName(tokenId);
-                curStruct.AddVariable(ss);
+                symVar.offset = offset;
+                symVar.tokenId = tokenId;
+                symVar.Type = FindStruct(rawTokenId);
+                symVar.__name =  GetTokenName(tokenId);
+                curStruct.AddVariable(symVar);
                 offset += size;
                 if (curTokenId == TK_SEMICOLON || curTokenId == TK_EOF)
                     break;
@@ -581,14 +589,15 @@ namespace LockstepECL {
             }
 
             while (curTokenId != TK_CLOSEPA) {
+                var rawTokenId = curTokenId;
                 if (!type_specifier()) {
                     Error(ETipsType.UnknowTypeIdentifier, curTokenId);
                 }
 
                 int isForceAlign = -1;
-                var symVar = new SymVar();
-                CurSymbol = symVar;
                 var s = declarator(ref n, ref isForceAlign);
+                s.Type = FindStruct(rawTokenId);
+                CurSymbol = s;
                 if (!hasDefined) {
                     symFunc.AddParam(s as SymVar);
                 }
@@ -631,18 +640,18 @@ namespace LockstepECL {
 
         bool is_type_specifier(int tokenId){
             switch (tokenId) {
-                case KW_STRING :
-                case KW_BOOL   :
-                case KW_FLOAT  :
-                case KW_CHAR   :
-                case KW_INT8   :
-                case KW_INT16  :
-                case KW_INT32  :
-                case KW_INT64  :
-                case KW_UINT8  :
-                case KW_UINT16 :
-                case KW_UINT32 :
-                case KW_UINT64 :
+                case KW_STRING:
+                case KW_BOOL:
+                case KW_FLOAT:
+                case KW_CHAR:
+                case KW_INT8:
+                case KW_INT16:
+                case KW_INT32:
+                case KW_INT64:
+                case KW_UINT8:
+                case KW_UINT16:
+                case KW_UINT32:
+                case KW_UINT64:
                 case KW_VOID:
                 case KW_STRUCT:
                     return true;
@@ -946,7 +955,7 @@ namespace LockstepECL {
                     GetToken();
                     var symVar = optop.sym as SymVar;
 
-                    var symStruct = (symVar?.parentDomain ?? global).FindSymbol(symVar.typeId, true) as SymStruct;
+                    var symStruct = (symVar?.parentDomain ?? global).FindSymbol(symVar.tokenId, true) as SymStruct;
                     if (symStruct == null)
                         Error(ETipsType.ExpectStructVar);
                     optop.sym = symStruct?.FindSymbol(curTokenId, false);
