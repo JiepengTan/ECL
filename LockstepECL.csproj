@@ -60,6 +60,7 @@
     <Compile Include="Src\Common\Operand.cs" />
     <Compile Include="Src\Common\Token.cs" />
     <Compile Include="Src\Grammar\Grammar.cs" />
+    <Compile Include="Src\Grammar\TypeRegister.cs" />
     <Compile Include="Src\Grammar\ValExtension.cs" />
     <Compile Include="Src\Lex\ILex.cs" />
     <Compile Include="Src\Test\TestGrammar.cs" />

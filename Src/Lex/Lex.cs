@@ -42,6 +42,7 @@ namespace LockstepECL {
             sourcestr = new DynString();
             tkstr = new DynString();
             LexInfos = new LexInfos(allTokens);
+            LexInfos.filePath = filePath;
             allTokens.AddRange(keywords);
             for (int i = 0; i < keywords.Length; i++) {
                 str2Token.Add(keywords[i].name, keywords[i]);
@@ -91,6 +92,12 @@ namespace LockstepECL {
             while (IsLetter(curChar) || IsDigit(curChar)) {
                 tkstr.AddCh(curChar);
                 GetChar();
+            }
+
+            var data = tkstr.Data;
+            if (data == "false" || data == "true") {
+               tkvalue = bool.Parse(data);
+               return allTokens[TK_BOOL];
             }
 
             return InsertToken(tkstr.Data);

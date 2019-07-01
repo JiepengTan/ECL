@@ -20,6 +20,7 @@ namespace LockstepECL {
 
         public List<Token> tokenTable;
         public List<Info> tokenInfos;
+        public string filePath;
 
         public void OnToken(int line, int tokenId, object tokenVal){
             tokenInfos.Add(new Info() {line = line, tokenId = tokenId, tokenVal = tokenVal});
@@ -39,9 +40,7 @@ namespace LockstepECL {
             GetToken();
         }
 
-        public void GetTokenInfo(int tokenId){
-            
-        }
+        public void GetTokenInfo(int tokenId){ }
 
         public string GetTokenName(int tokenId){
             return tokenId > tokenTable.Count ? "" : tokenTable[tokenId].name;
@@ -49,8 +48,13 @@ namespace LockstepECL {
 
         public string GetTokenDebugString(){
             var tokenId = tokenInfos[_curIdx].tokenId;
-            if (tokenId >= Define.TK_CINT && tokenId <= Define.TK_CSTR)
+            if (tokenId >= Define.TK_BOOL && tokenId <= Define.TK_CSTR) {
+                if (tokenId == Define.TK_BOOL) {
+                    return ((bool) tokenInfos[_curIdx].tokenVal == false) ? "false" : "true";
+                }
+
                 return tokenInfos[_curIdx].tokenVal.ToString();
+            }
             else
                 return tokenTable[tokenId].name;
         }
@@ -58,6 +62,7 @@ namespace LockstepECL {
         public int TokenTableCount => tokenTable.Count;
         public int curTokenId => tokenInfos[_curIdx].tokenId;
         public object curTokenVal => tokenInfos[_curIdx].tokenVal;
+        public int curLineNum => tokenInfos[_curIdx].line;
 
         public override string ToString(){
             int curLine = 0;

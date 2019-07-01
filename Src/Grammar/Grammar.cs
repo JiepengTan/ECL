@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using static LogHandler;
 using static LockstepECL.Define;
 using static LockstepECL.ConstDefine;
+using static LockstepECL.TypeRegister;
 
 namespace LockstepECL {
     public class Stack : Stack<object> {
@@ -67,13 +68,14 @@ namespace LockstepECL {
         void operand_push(Symbol type, object val){ }
     }
 
+
     public unsafe partial class Grammar : BaseParser {
         public LexInfos LexInfos { get; private set; }
 
         public int curTokenId ;
         public object curTokenVal ;
         public string __debugTokenName;
-
+        public TypeRegister typeMgr;
         void SyntaxIndent(){
             FuncSyntaxIndent?.Invoke();
         }
@@ -84,6 +86,7 @@ namespace LockstepECL {
             LexInfos.SkipToken();
             curTokenId = LexInfos.curTokenId;
             curTokenVal = LexInfos.curTokenVal;
+            lineNum = LexInfos.curLineNum;
             __debugTokenName = LexInfos.GetTokenName(curTokenId);
             SyntaxIndent();
         }
@@ -92,6 +95,7 @@ namespace LockstepECL {
             LexInfos.GetToken();
             curTokenId = LexInfos.curTokenId;
             curTokenVal = LexInfos.curTokenVal;
+            lineNum = LexInfos.curLineNum;
             __debugTokenName = LexInfos.GetTokenName(curTokenId);
             SyntaxIndent();
         }
@@ -106,33 +110,26 @@ namespace LockstepECL {
 
         public int TokenTableCount => LexInfos.TokenTableCount;
 
-        void GetTokenInfo(){ }
 
         public Action FuncSyntaxIndent;
 
         public void Init(LexInfos lexInfos, Action funcSyntaxIndent){
+            typeMgr = new TypeRegister();
             this.LexInfos = lexInfos;
+            this.filePath = lexInfos.filePath;
             this.FuncSyntaxIndent = funcSyntaxIndent;
-            int_type.typeId = T_INT;
-            char_pointer_type.typeId = T_CHAR;
-            default_func_type.typeId = T_FUNC;
             optop = opstack[0];
         }
 
 
+        
         public int CurStructMaxIdx = (int) EBuildInTypes.NumOfEnum;
-
-        Stack global_sym_stack = new Stack();
-        Stack local_sym_stack = new Stack();
 
         private int rsym = 0;
         private int ind = 0;
         private int loc = 0;
         int func_begin_ind = 0;
         int func_ret_sub = 0;
-        Symbol char_pointer_type = new Symbol();
-        Symbol int_type = new Symbol();
-        Symbol default_func_type = new Symbol();
         Operand[] opstack = new Operand[256];
         Operand optop = new Operand();
         public int syntax_state; //语法状态
@@ -153,12 +150,18 @@ namespace LockstepECL {
                     align = CurSymbol.align;
                     return CurSymbol.align;
                 }
-                case T_INT:
-                    align = 4;
-                    return 4;
-                case T_SHORT:
-                    align = 2;
-                    return 2;
+                case T_STRING   :align = 4;return 4;
+                case T_BOOL     :align = 1;return 1;
+                case T_FLOAT    :align = 4;return 4;
+                case T_CHAR     :align = 1;return 1;
+                case T_INT8     :align = 1;return 1;
+                case T_INT16    :align = 2;return 2;
+                case T_INT32    :align = 4;return 4;
+                case T_INT64    :align = 8;return 8;
+                case T_UINT8    :align = 1;return 1;
+                case T_UINT16   :align = 2;return 2;
+                case T_UINT32   :align = 4;return 4;
+                case T_UINT64   :align = 8;return 8;
                 default:
                     align = 1;
                     return 1;
@@ -332,14 +335,19 @@ namespace LockstepECL {
             curTypeId = 0;
             lastTokenId = curTokenId;
             switch (curTokenId) {
-                case KW_CHAR:
-                    curTypeId = T_CHAR;
-                    type_found = true;
-                    syntax_state = SNTX_SP;
-                    GetToken();
-                    break;
-                case KW_SHORT:
-                    curTypeId = T_SHORT;
+                case KW_STRING      :
+                case KW_BOOL        :
+                case KW_FLOAT       :
+                case KW_CHAR        :
+                case KW_INT8        :
+                case KW_INT16       :
+                case KW_INT32       :
+                case KW_INT64       :
+                case KW_UINT8       :
+                case KW_UINT16      :
+                case KW_UINT32      :
+                case KW_UINT64      :
+                    curTypeId = T_STRING + (curTokenId - KW_STRING);
                     type_found = true;
                     syntax_state = SNTX_SP;
                     GetToken();
@@ -348,12 +356,6 @@ namespace LockstepECL {
                     curTypeId = T_VOID;
                     type_found = true;
                     syntax_state = SNTX_SP;
-                    GetToken();
-                    break;
-                case KW_INT:
-                    curTypeId = T_INT;
-                    syntax_state = SNTX_SP;
-                    type_found = true;
                     GetToken();
                     break;
                 case KW_STRUCT:
@@ -366,7 +368,7 @@ namespace LockstepECL {
                     var hasStruct = HasStruct(curTokenId);
                     if (hasStruct) {
                         lastTokenId = curTokenId;
-                        curTypeId = T_CLASS;
+                        curTypeId = T_STRUCT;
                         type_found = true;
                         syntax_state = SNTX_SP;
                         GetToken();
@@ -629,9 +631,18 @@ namespace LockstepECL {
 
         bool is_type_specifier(int tokenId){
             switch (tokenId) {
-                case KW_CHAR:
-                case KW_SHORT:
-                case KW_INT:
+                case KW_STRING :
+                case KW_BOOL   :
+                case KW_FLOAT  :
+                case KW_CHAR   :
+                case KW_INT8   :
+                case KW_INT16  :
+                case KW_INT32  :
+                case KW_INT64  :
+                case KW_UINT8  :
+                case KW_UINT16 :
+                case KW_UINT32 :
+                case KW_UINT64 :
                 case KW_VOID:
                 case KW_STRUCT:
                     return true;
@@ -897,7 +908,7 @@ namespace LockstepECL {
                     break;
                 case TK_MINUS:
                     GetToken();
-                    operand_push(int_type, 0);
+                    operand_push(typeMgr.TypeInt32, 0);
                     unary_expression();
                     gen_op(TK_MINUS);
                     break;
@@ -921,7 +932,7 @@ namespace LockstepECL {
             var size = type_size(ref align);
             if (size < 0)
                 Error(ETipsType.SizeOfError, size);
-            operand_push(int_type, size);
+            operand_push(typeMgr.TypeInt32, size);
         }
 
         void postfix_expression(){
@@ -934,9 +945,6 @@ namespace LockstepECL {
                     cancel_lvalue();
                     GetToken();
                     var symVar = optop.sym as SymVar;
-                    if (symVar == null) {
-                        int sss = 0;
-                    }
 
                     var symStruct = (symVar?.parentDomain ?? global).FindSymbol(symVar.typeId, true) as SymStruct;
                     if (symStruct == null)
@@ -966,9 +974,17 @@ namespace LockstepECL {
             Symbol s;
             Section sec = new Section();
             switch (curTokenId) {
+                case TK_BOOL:
+                    operand_push(typeMgr.TypeBool, (bool) curTokenVal);
+                    GetToken();
+                    break;
                 case TK_CINT:
                 case TK_CCHAR:
-                    operand_push(int_type, (int) curTokenVal);
+                    operand_push(typeMgr.TypeInt32, (int) curTokenVal);
+                    GetToken();
+                    break;
+                case TK_LFloat:
+                    operand_push(typeMgr.TypeFloat, (float) curTokenVal);
                     GetToken();
                     break;
                 case TK_CSTR:

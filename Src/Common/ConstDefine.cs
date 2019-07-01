@@ -39,19 +39,27 @@ namespace LockstepECL {
         public const int SNTX_DELAY = 3;
         //};
 
-        //enum ETypeCode {
-        public const int T_INT = 0; // 整型                     
-        public const int T_CHAR = 1; // 字符型                  
-        public const int T_SHORT = 2; // 短整型                         
-        public const int T_VOID = 3; // 空类型                         
-        public const int T_PTR = 4; // 指针                          
-        public const int T_FUNC = 5; // 函数                     
-        public const int T_STRUCT = 6; // 结构体                
-        public const int T_CLASS = 6; // 结构体 
 
+
+                              
+        public const int T_VOID       = 0 ; // 指针  
+        public const int T_PTR        = 1 ; // 指针                          
+        public const int T_FUNC       = 2 ; // 函数                     
+        public const int T_STRUCT     = 3 ; // 结构体  
+        public const int T_STRING     = 4 ; // 空类型  
+        public const int T_BOOL       = 5 ; // 空类型  
+        public const int T_FLOAT      = 6 ; // 空类型  
+        public const int T_CHAR       = 7 ; // 空类型  
+        public const int T_INT8       = 8 ; // 空类型  
+        public const int T_INT16      = 9 ; // 空类型  
+        public const int T_INT32      = 10; // 空类型  
+        public const int T_INT64      = 11; // 空类型  
+        public const int T_UINT8      = 12; // 空类型  
+        public const int T_UINT16     = 13; // 空类型   
+        public const int T_UINT32     = 14; // 空类型  
+        public const int T_UINT64     = 15; // 空类型   
 
         public const int T_BTYPE = 0x000f; // 基本类型掩码          
-
         public const int T_ARRAY = 0x0010; // 数组
 
         //};

@@ -25,28 +25,47 @@ namespace LockstepECL {
         public const int TK_COMMA       = 22;
         public const int TK_ELLIPSIS    = 23;
         public const int TK_EOF         = 24;
-        public const int TK_CINT        = 25;
-        public const int TK_LFloat      = 26;
-        public const int TK_CCHAR       = 27;
-        public const int TK_CSTR        = 28;
-        public const int KW_CHAR        = 29;
-        public const int KW_SHORT       = 30;
-        public const int KW_INT         = 31;
-        public const int KW_FLOAT       = 32;
-        public const int KW_VOID        = 33;
-        public const int KW_STRUCT      = 34;
-        public const int KW_IF          = 35;
-        public const int KW_ELSE        = 36;
-        public const int KW_FOR         = 37;
-        public const int KW_CONTINUE    = 38;
-        public const int KW_BREAK       = 39;
-        public const int KW_RETURN      = 40;
-        public const int KW_SIZEOF      = 41;
-        public const int KW_ALIGN       = 42;
-        public const int KW_CDECL       = 43;
-        public const int KW_STDCALL     = 44;
-        public const int TK_IDENT       = 45;
+        public const int TK_BOOL        = 25;
+        public const int TK_LFloat      = 27;
+        public const int TK_CINT        = 26;
+        public const int TK_CCHAR       = 28;
+        public const int TK_CSTR        = 29;
+        public const int TK_SYMSTRUCT   = 30;
+        public const int TK_SYMVAR      = 31;
+        public const int TK_SYMDOMAIN   = 32;
+        public const int TK_SYMFUNCTION = 33;
+        public const int KW_STRING      = 34;
+        public const int KW_BOOL        = 35;
+        public const int KW_FLOAT       = 36;
+        public const int KW_CHAR        = 37;
+        public const int KW_INT8        = 38;
+        public const int KW_INT16       = 39;
+        public const int KW_INT32       = 40;
+        public const int KW_INT64       = 41;
+        public const int KW_UINT8       = 42;
+        public const int KW_UINT16      = 43;
+        public const int KW_UINT32      = 44;
+        public const int KW_UINT64      = 45;
+        public const int KW_VOID        = 46;
+        public const int KW_STRUCT      = 47;
+        public const int KW_IF          = 48;
+        public const int KW_ELSE        = 49;
+        public const int KW_FOR         = 50;
+        public const int KW_CONTINUE    = 51;
+        public const int KW_BREAK       = 52;
+        public const int KW_RETURN      = 53;
+        public const int KW_SIZEOF      = 54;
+        public const int KW_ALIGN       = 55;
+        public const int KW_CDECL       = 56;
+        public const int KW_STDCALL     = 57;
+        public const int TK_IDENT       = 58;
 
+            
+            
+            
+            
+        
+        
         private static int NumOfToken = TK_IDENT + 1;
            
         
@@ -76,14 +95,27 @@ namespace LockstepECL {
             new Token(TK_COMMA      ,",",                null),         
             new Token(TK_ELLIPSIS   ,"...",              null),         
             new Token(TK_EOF        ,"End_Of_File",      null),         
+            new Token(TK_BOOL       ,"布尔常量",           null),        
             new Token(TK_LFloat     ,"浮点常量",           null),         
             new Token(TK_CINT       ,"整型常量",           null),         
             new Token(TK_CCHAR      ,"字符常量",           null),         
             new Token(TK_CSTR       ,"字符串常量",         null),         
-            new Token(KW_CHAR       ,"char",             null),         
-            new Token(KW_SHORT      ,"short",            null),         
-            new Token(KW_INT        ,"int",              null),           
-            new Token(KW_FLOAT      ,"float",            null),       
+            new Token(TK_SYMSTRUCT  ,"SymStruct",        null),         
+            new Token(TK_SYMVAR     ,"SymVar",           null),        
+            new Token(TK_SYMDOMAIN  ,"SymDomain",        null),        
+            new Token(TK_SYMFUNCTION,"SymFunction",      null),             
+            new Token(KW_STRING     ,"string",           null),
+            new Token(KW_BOOL       ,"bool",             null),         
+            new Token(KW_FLOAT      ,"float",            null),          
+            new Token(KW_CHAR       ,"char",             null),  
+            new Token(KW_INT8       ,"int8",             null),    
+            new Token(KW_INT16      ,"int16",            null),          
+            new Token(KW_INT32      ,"int32",            null),    
+            new Token(KW_INT64      ,"int64",            null),          
+            new Token(KW_UINT8      ,"uint8",            null),    
+            new Token(KW_UINT16     ,"uint16",           null),     
+            new Token(KW_UINT32     ,"uint32",           null),     
+            new Token(KW_UINT64     ,"uint64",           null),         
             new Token(KW_VOID       ,"void",             null),         
             new Token(KW_STRUCT     ,"struct",           null),         
             new Token(KW_IF         ,"if",               null),         

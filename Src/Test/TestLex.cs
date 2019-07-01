@@ -29,7 +29,7 @@ namespace LockstepECL {
             var text = File.ReadAllText(path).Replace("\r\n", "\n").Replace("\r", "\n");
             input = new InputStream(text);
             lex.lineNum = 1;
-            lex.fileName = path;
+            lex.filePath = path;
             lex.Init(input.GetChar, input.UnChar, OnSpace, LexIndent);
         }
 
