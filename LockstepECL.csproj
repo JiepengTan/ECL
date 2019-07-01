@@ -81,8 +81,6 @@
     <Content Include="data\HelloWorld.c" />
     <Content Include="data\SyntaxIndent.c" />
     <Content Include="Src\Define\ECL_Syntax.txt" />
-    <Content Include="Src\Define\Lua_Syntax.txt" />
-    <Content Include="Src\Define\SC_Syntax.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

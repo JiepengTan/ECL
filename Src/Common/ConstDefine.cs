@@ -9,6 +9,31 @@ namespace LockstepECL {
         T_STRUCT = 6, // 结构体
     }
 
+    public class BuildInTypeDefine {
+        public const int T_VOID       = 0 ; // 指针  
+        public const int T_PTR        = 1 ; // 指针                          
+        public const int T_FUNC       = 2 ; // 函数                     
+        public const int T_STRUCT     = 3 ; // 结构体  
+        public const int T_STRING     = 4 ; //   
+        public const int T_BOOL       = 5 ; //   
+        public const int T_FLOAT      = 6 ; //   
+        public const int T_CHAR       = 7 ; //   
+        public const int T_INT8       = 8 ; //   
+        public const int T_INT16      = 9 ; //   
+        public const int T_INT32      = 10; //   
+        public const int T_INT64      = 11; //   
+        public const int T_UINT8      = 12; //   
+        public const int T_UINT16     = 13; //    
+        public const int T_UINT32     = 14; //   
+        public const int T_UINT64     = 15; //    
+
+        public const int T_BTYPE = 0x000f; // 基本类型掩码          
+        public const int T_ARRAY = 0x0010; // 数组
+
+        //};
+        public const int ALIGN_SET = 0x100;
+    }
+
     public class ConstDefine {
         //public class EStorageClass {
         public static int SC_GLOBAL = 0x00f0; // 包括：包括整型常量，字符常量、字符串常量,全局变量,函数定义          
@@ -42,28 +67,6 @@ namespace LockstepECL {
 
 
                               
-        public const int T_VOID       = 0 ; // 指针  
-        public const int T_PTR        = 1 ; // 指针                          
-        public const int T_FUNC       = 2 ; // 函数                     
-        public const int T_STRUCT     = 3 ; // 结构体  
-        public const int T_STRING     = 4 ; // 空类型  
-        public const int T_BOOL       = 5 ; // 空类型  
-        public const int T_FLOAT      = 6 ; // 空类型  
-        public const int T_CHAR       = 7 ; // 空类型  
-        public const int T_INT8       = 8 ; // 空类型  
-        public const int T_INT16      = 9 ; // 空类型  
-        public const int T_INT32      = 10; // 空类型  
-        public const int T_INT64      = 11; // 空类型  
-        public const int T_UINT8      = 12; // 空类型  
-        public const int T_UINT16     = 13; // 空类型   
-        public const int T_UINT32     = 14; // 空类型  
-        public const int T_UINT64     = 15; // 空类型   
-
-        public const int T_BTYPE = 0x000f; // 基本类型掩码          
-        public const int T_ARRAY = 0x0010; // 数组
-
-        //};
-        public const int ALIGN_SET = 0x100;
 
         // public enum ELexState {
         public const int LEX_NORMAL = 0;

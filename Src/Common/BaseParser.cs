@@ -3,7 +3,7 @@ namespace LockstepECL {
         protected LogHandler _logHandler = new LogHandler();
         public string filePath = "";
         public int lineNum;
-        public int colNum = 0;
+        public int colNum = -1;
 
         public virtual void Warning(ETipsType type, params object[] args){
             _logHandler.HandlerLog(EWorkStage.COMPILE, EErrorLevel.WARNING, type, filePath, lineNum, colNum, args);

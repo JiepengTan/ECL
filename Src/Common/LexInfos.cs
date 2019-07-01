@@ -59,7 +59,7 @@ namespace LockstepECL {
                 return tokenTable[tokenId].name;
         }
 
-        public int TokenTableCount => tokenTable.Count;
+        public int TokenCount => tokenTable.Count;
         public int curTokenId => tokenInfos[_curIdx].tokenId;
         public object curTokenVal => tokenInfos[_curIdx].tokenVal;
         public int curLineNum => tokenInfos[_curIdx].line;

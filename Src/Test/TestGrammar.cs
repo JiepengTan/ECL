@@ -31,7 +31,7 @@ namespace LockstepECL {
         protected override void OnSpace(char ch){ }
 
         void SyntaxIndent(){
-            switch (grammar.syntax_state) {
+            switch (grammar.SyntaxState) {
                 case SNTX_NUL:
                     ColorToken(ELexState.LEX_NORMAL);
                     break;
@@ -40,10 +40,10 @@ namespace LockstepECL {
                     ColorToken(ELexState.LEX_NORMAL);
                     break;
                 case SNTX_LF_HT: {
-                    if (grammar.curTokenId == TK_END) // 遇到'}',缩进减少一级
-                        grammar.syntax_level--;
+                    if (grammar.CurTokenId == TK_END) // 遇到'}',缩进减少一级
+                        grammar.SyntaxLevel--;
                     Output("\n");
-                    OutputTab(grammar.syntax_level);
+                    OutputTab(grammar.SyntaxLevel);
                 }
                     ColorToken(ELexState.LEX_NORMAL);
                     break;
@@ -51,23 +51,23 @@ namespace LockstepECL {
                     break;
             }
 
-            grammar.syntax_state = SNTX_NUL;
+            grammar.SyntaxState = SNTX_NUL;
         }
 
         protected void ColorToken(ELexState lex_state){
             string p;
             switch (lex_state) {
                 case ELexState.LEX_NORMAL: {
-                    if (grammar.curTokenId >= Define.TK_IDENT)
+                    if (grammar.CurTokenId >= Define.TK_IDENT)
                         SetConsoleTextAttribute(ConsoleColor.Gray, defaultColor);
-                    else if (grammar.curTokenId >= Define.KW_CHAR)
+                    else if (grammar.CurTokenId >= Define.KW_CHAR)
                         SetConsoleTextAttribute(ConsoleColor.Green, defaultColor);
-                    else if (grammar.curTokenId >= Define.TK_CINT)
+                    else if (grammar.CurTokenId >= Define.TK_CINT)
                         SetConsoleTextAttribute(ConsoleColor.Red, defaultColor);
                     else
                         SetConsoleTextAttribute(ConsoleColor.Red, defaultColor);
                     p = grammar.GetTokenDebugString();
-                    if (grammar.curTokenId != Define.TK_EOF) {
+                    if (grammar.CurTokenId != Define.TK_EOF) {
                         Output(p);
                     }
 

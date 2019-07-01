@@ -1,421 +1,131 @@
-//token
-//base types
-CONSTANT ::= 'const'
-BOOLEAN ::= "Boolean"
-INT8 ::= 'Int8'
-INT16 ::= 'Int16'
-INT32 ::= 'Int32'
-INT64 ::= 'Int64'
-UINT8 ::=  'UInt8'
-UINT16 ::= 'UInt16'
-UINT32 ::= 'UInt32'
-UINT64 ::= 'UInt64'
-FLOAT ::= 'LFloat'
-VECTOR2 ::= 'LVector2'
-VECTOR3 ::= 'LVector3'
-MATRIX33 ::= 'LMatrix33'
-QUATERNION ::= 'LQuaternion'
-STRING_LITERAL ::= 'String'
-//ecs 
-ENTITY ::= 'entity'
-FIELDS ::= 'fields'
-USE ::= 'use'
-SYNCED ::= 'synced'
-SIGNAL ::= 'signal'
-ASSET ::= 'asset'
-ENTITY_REF ::= 'entity_ref'
-ASSET_REF ::= 'asset_ref'
-ARRAY ::= 'array'
-COLLISION ::= 'collision'
-GLOBAL ::= 'global'
-// define
-CONST ::= 'const'
-STRUCT ::= 'struct'
-ENUM  ::='enum'
+external_declaration ::= function_definition
+    | declaration
 
-// TODO UNION ::= 'union'
-// TODO SIGNED ::= 'Int8'
-// TODO UNSIGNED ::= 'Int8'
-// TODO VOID ::= 'void'
-// TODO SIZEOF ::= 'sizeof'
-// TODO TYPEDEF ::= 'typedef'
-// TODO PTR_OP ::= '->'
-// TODO INC_OP ::= '+'
-// TODO DEC_OP ::= '-'
-// TODO LEFT_OP ::= '<<'
-// TODO RIGHT_OP ::= '>>'
-// TODO LE_OP ::= '<='
-// TODO GE_OP ::= '>='
-// TODO EQ_OP ::= '=='
-// TODO NE_OP ::= '!='
-// TODO AND_OP ::= '&'
-// TODO OR_OP ::= '|'
-// TODO MUL_ASSIGN ::= '*'
-// TODO DIV_ASSIGN ::= '/'
-// TODO MOD_ASSIGN ::= '%'
-// TODO ADD_ASSIGN ::= '+'
-// TODO SUB_ASSIGN ::= '-'
-// TODO LEFT_ASSIGN ::= '++'
-// TODO RIGHT_ASSIGN ::= '++'
-// TODO AND_ASSIGN ::= '&='
-// TODO XOR_ASSIGN ::= '^='
-// TODO OR_ASSIGN ::= '|='
-// TODO IF ::= 'if'
-// TODO ELSE ::= 'else'
-// TODO FOR ::= 'for'
-// TODO GOTO ::= 'goto'
-// TODO CONTINUE ::= 'continue'
-// TODO BREAK ::= 'break'
-// TODO RETURN ::= 'return'
-// TODO WHILE ::= 'while'
-// TODO DO ::= 'do'
-// TODO CASE ::= 'case'
-// TODO SWITCH ::= 'switch'
-// TODO STATIC ::= 'static'
-// TODO VOLATILE ::= '_'
-// TODO TYPE_NAME ::= '_'
-// TODO EXTERN ::= '_'
-// TODO AUTO ::= '_'
-// TODO REGISTER ::= '_'
-// TODO ELLIPSIS ::= '_'
-// TODO DEFAULT ::= '_'
-//end of token
+function_definition ::= type_specifier declaratorfuncbody
 
+declaration ::=  type_specifier TK_SEMICOLON
+	| type_specifier init_declarator_list TK_SEMICOLON
 
-primary_expression ::= IDENTIFIER
-	| CONSTANT
-	| STRING_LITERAL
-	| '(' expression ')'
-	;
+init_declarator_list ::= init_declarator {TK_COMMA init_declarator}
 
-postfix_expression ::= primary_expression
-	| postfix_expression '[' expression ']'
-	| postfix_expression '(' ')'
-	| postfix_expression '(' argument_expression_list ')'
-	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
-	| postfix_expression INC_OP
-	| postfix_expression DEC_OP
-	;
-
-argument_expression_list ::= assignment_expression
-	| argument_expression_list ',' assignment_expression
-	;
-
-unary_expression ::= postfix_expression
-	| INC_OP unary_expression
-	| DEC_OP unary_expression
-	| unary_operator cast_expression
-	| SIZEOF unary_expression
-	| SIZEOF '(' type_name ')'
-	;
-
-unary_operator ::= '&'
-	| '*'
-	| '+'
-	| '-'
-	| '~'
-	| '!'
-	;
-
-cast_expression ::= unary_expression
-	| '(' type_name ')' cast_expression
-	;
-
-multiplicative_expression ::= cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
-	| multiplicative_expression '%' cast_expression
-	;
-
-additive_expression ::= multiplicative_expression
-	| additive_expression '+' multiplicative_expression
-	| additive_expression '-' multiplicative_expression
-	;
-
-shift_expression ::= additive_expression
-	| shift_expression LEFT_OP additive_expression
-	| shift_expression RIGHT_OP additive_expression
-	;
-
-relational_expression ::= shift_expression
-	| relational_expression '<' shift_expression
-	| relational_expression '>' shift_expression
-	| relational_expression LE_OP shift_expression
-	| relational_expression GE_OP shift_expression
-	;
-
-equality_expression ::= relational_expression
-	| equality_expression EQ_OP relational_expression
-	| equality_expression NE_OP relational_expression
-	;
-
-and_expression ::= equality_expression
-	| and_expression '&' equality_expression
-	;
-
-exclusive_or_expression ::= and_expression
-	| exclusive_or_expression '^' and_expression
-	;
-
-inclusive_or_expression ::= exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression
-	;
-
-logical_and_expression ::= inclusive_or_expression
-	| logical_and_expression AND_OP inclusive_or_expression
-	;
-
-logical_or_expression ::= logical_and_expression
-	| logical_or_expression OR_OP logical_and_expression
-	;
-
-conditional_expression ::= logical_or_expression
-	| logical_or_expression '?' expression ::=' conditional_expression
-	;
-
-assignment_expression ::= conditional_expression
-	| unary_expression assignment_operator assignment_expression
-	;
-
-assignment_operator ::= '='
-	| MUL_ASSIGN
-	| DIV_ASSIGN
-	| MOD_ASSIGN
-	| ADD_ASSIGN
-	| SUB_ASSIGN
-	| LEFT_ASSIGN
-	| RIGHT_ASSIGN
-	| AND_ASSIGN
-	| XOR_ASSIGN
-	| OR_ASSIGN
-	;
-
-expression ::= assignment_expression
-	| expression ',' assignment_expression
-	;
-
-constant_expression ::= conditional_expression
-	;
-
-declaration ::= declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
-	;
-
-declaration_specifiers ::= storage_class_specifier
-	| storage_class_specifier declaration_specifiers
-	| type_specifier
-	| type_specifier declaration_specifiers
-	| type_qualifier
-	| type_qualifier declaration_specifiers
-	;
-
-init_declarator_list ::= init_declarator
-	| init_declarator_list ',' init_declarator
-	;
-
-init_declarator ::= declarator
-	| declarator '=' initializer
-	;
-
-storage_class_specifier ::= TYPEDEF
-	| EXTERN
-	| STATIC
-	| AUTO
-	| REGISTER
-	;
-
-type_specifier ::= VOID
-	| INT8
-	| INT16
-	| INT32
-	| INT64
-	| FLOAT
-	| VECTOR2
-	| SIGNED
-	| UNSIGNED
-	| struct_or_union_specifier
-	| enum_specifier
-	| TYPE_NAME
-	;
-
-struct_or_union_specifier ::= struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-	| struct_or_union '{' struct_declaration_list '}'
-	| struct_or_union IDENTIFIER
-	;
-
-struct_or_union ::= STRUCT
-	| UNION
-	;
-
-struct_declaration_list ::= struct_declaration
-	| struct_declaration_list struct_declaration
-	;
-
-struct_declaration ::= specifier_qualifier_list struct_declarator_list ';'
-	;
-
-specifier_qualifier_list ::= type_specifier specifier_qualifier_list
-	| type_specifier
-	| type_qualifier specifier_qualifier_list
-	| type_qualifier
-	;
-
-struct_declarator_list ::= struct_declarator
-	| struct_declarator_list ',' struct_declarator
-	;
-
-struct_declarator ::= declarator
-	| ::=' constant_expression
-	| declarator ::=' constant_expression
-	;
-
-enum_specifier ::= ENUM '{' enumerator_list '}'
-	| ENUM IDENTIFIER '{' enumerator_list '}'
-	| ENUM IDENTIFIER
-	;
-
-enumerator_list ::= enumerator
-	| enumerator_list ',' enumerator
-	;
-
-enumerator ::= IDENTIFIER
-	| IDENTIFIER '=' constant_expression
-	;
-
-type_qualifier ::= CONST
-	| VOLATILE
-	;
-
-declarator ::= pointer direct_declarator
-	| direct_declarator
-	;
-
-direct_declarator ::= IDENTIFIER
-	| '(' declarator ')'
-	| direct_declarator '[' constant_expression ']'
-	| direct_declarator '[' ']'
-	| direct_declarator '(' parameter_type_list ')'
-	| direct_declarator '(' identifier_list ')'
-	| direct_declarator '(' ')'
-	;
-
-pointer ::= '*'
-	| '*' type_qualifier_list
-	| '*' pointer
-	| '*' type_qualifier_list pointer
-	;
-
-type_qualifier_list ::= type_qualifier
-	| type_qualifier_list type_qualifier
-	;
-
-
-parameter_type_list ::= parameter_list
-	| parameter_list ',' ELLIPSIS
-	;
-
-parameter_list ::= parameter_declaration
-	| parameter_list ',' parameter_declaration
-	;
-
-parameter_declaration ::= declaration_specifiers declarator
-	| declaration_specifiers abstract_declarator
-	| declaration_specifiers
-	;
-
-identifier_list ::= IDENTIFIER
-	| identifier_list ',' IDENTIFIER
-	;
-
-type_name ::= specifier_qualifier_list
-	| specifier_qualifier_list abstract_declarator
-	;
-
-abstract_declarator ::= pointer
-	| direct_abstract_declarator
-	| pointer direct_abstract_declarator
-	;
-
-direct_abstract_declarator ::= '(' abstract_declarator ')'
-	| '[' ']'
-	| '[' constant_expression ']'
-	| direct_abstract_declarator '[' ']'
-	| direct_abstract_declarator '[' constant_expression ']'
-	| '(' ')'
-	| '(' parameter_type_list ')'
-	| direct_abstract_declarator '(' ')'
-	| direct_abstract_declarator '(' parameter_type_list ')'
-	;
+init_declarator ::= declarator|declarator TK_ASSIGNinitializer
 
 initializer ::= assignment_expression
-	| '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
-	;
 
-initializer_list ::= initializer
-	| initializer_list ',' initializer
-	;
+type_specifier ::= KW_STRING   
+	| KW_BOOL      
+    | KW_FLOAT     
+    | KW_CHAR      
+    | KW_INT8      
+    | KW_INT16     
+    | KW_INT32     
+    | KW_INT64     
+    | KW_UINT8     
+    | KW_UINT16    
+    | KW_UINT32    
+    | KW_UINT64    
+	| KW_VOID 
+	| struct_specifier
 
-statement ::= labeled_statement
-	| compound_statement
-	| expression_statement
-	| selection_statement
-	| iteration_statement
-	| jump_statement
-	;
+struct_specifier ::=  KW_STRUCT IDENTIFIER TK_BEGIN struct_declaration_list _END 
+	| KW_STRUCT IDENTIFIER
 
-labeled_statement ::= IDENTIFIER ::=' statement
-	| CASE constant_expression ::=' statement
-	| DEFAULT ::=' statement
-	;
+struct_declaration_list ::= struct_declaration { struct_declaration }
 
-compound_statement ::= '{' '}'
-	| '{' statement_list '}'
-	| '{' declaration_list '}'
-	| '{' declaration_list statement_list '}'
-	;
+struct_declaration ::= type_specifier struct_declarator_list TK_SEMICOLON
 
-declaration_list ::= declaration
-	| declaration_list declaration
-	;
+struct_declarator_list ::= declarator{TK_COMMAdeclarator}
 
-statement_list ::= statement
-	| statement_list statement
-	;
+declarator ::= {pointer} {function_calling_convention} {struct_member_alignment} direct_declarator
 
-expression_statement ::= ';'
-	| expression ';'
-	;
+pointer ::= TK_STAR
 
-selection_statement ::= IF '(' expression ')' statement
-	| IF '(' expression ')' statement ELSE statement
-	| SWITCH '(' expression ')' statement
-	;
+function_calling_convention ::= KW_CDECL|KW_STDCALL
 
-iteration_statement ::= WHILE '(' expression ')' statement
-	| DO statement WHILE '(' expression ')' ';'
-	| FOR '(' expression_statement expression_statement ')' statement
-	| FOR '(' expression_statement expression_statement expression ')' statement
-	;
+struct_member_alignment ::= KW_ALIGNTK_OPENPATK_CINTTK_CLOSEPA
 
-jump_statement ::= GOTO IDENTIFIER ';'
-	| CONTINUE ';'
-	| BREAK ';'
-	| RETURN ';'
-	| RETURN expression ';'
-	;
+direct_declarator ::=   IDENTIFIERdirect_declarator_postfix
 
-translation_unit ::= external_declaration
-	| translation_unit external_declaration
-	;
+direct_declarator_ postfix ::=  {TK_OPENBRTK_CINTTK_CLOSEBR
+ 	| TK_OPENBRTK_CLOSEBR
+	| TK_OPENPAparameter_type_listTK_CLOSEPA 
+	| TK_OPENPATK_CLOSEPA}
 
-external_declaration ::= function_definition
-	| declaration
-	;
+parameter_type_list ::= parameter_list
+    |parameter_listTK_COMMATK_ELLIPSIS
 
-function_definition ::= declaration_specifiers declarator declaration_list compound_statement
-	| declaration_specifiers declarator compound_statement
-	| declarator declaration_list compound_statement
-	| declarator compound_statement
-	;
+parameter_list ::= parameter_declaration {TK_COMMA parameter_declaration}
+
+funcbody ::= compound_statement
+
+statement  ::= compound_statement 
+    | if_statement 
+    | return_statement 
+    | break_statement 
+    | continue_statement 
+    | for_statement 
+    | expression_statement
+ 
+compound_statement ::= TK_BEGIN{declaration}{statement}TK_END
+ 
+if_statement ::= KW_IF TK_OPENPA expression TK_CLOSEPA statement[ KW_ELSE statement ]
+ 
+for_statement ::= KW_FOR TK_OPENPA expression_statement expression_statementexpression TK_CLOSEPA statement
+
+continue_statement ::= KW_CONTINUE TK_SEMICOLON
+
+break_statement ::= KW_BREAK TK_SEMICOLON
+
+return_statement ::= KW_RETURN TK_SEMICOLON
+ 	| KW_RETURN expression TK_SEMICOLON
+
+expression_statement ::= TK_SEMICOLON 
+    | expression TK_SEMICOLON 
+
+expression ::= assignment_expression{TK_COMMAassignment_expression}
+assignment_expression ::=  equality_expression
+	| unary_expression TK_ASSIGN equality_expression 
+equality_expression  ::= relational_expression {TK_EQ relational_expression | TK_NEQ relational_expression}
+
+relational_expression ::= additive_expression {
+	TK_LT additive_expression 
+ 	| TK_GT additive_expression 
+ 	| TK_LEQ additive_expression 
+ 	| TK_GEQ additive_expression
+    }
+ 
+additive_expression ::=  multiplicative_expression 
+ 		{TK_PLUS multiplicative_expression
+ 		TK_MINUS multiplicative_expression}
+ 
+multiplicative_expression ::= unary_expression
+ 	{TK_STAR   unary_expression 
+ 	| TK_DIVIDE unary_expression  
+ 	| TK_MOD   unary_expression }
+ 
+unary_expression ::=  postfix_expression 
+ 	| TK_AND unary_expression 
+ 	| TK_STAR unary_expression 
+ 	| TK_PLUS unary_expression 
+ 	| TK_MINUS unary_expression 
+ 	| KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA 
+ 
+sizeof_expression ::=  
+ 		KW_SIZEOFTK_OPENPA type_specifier TK_ CLOSEPA
+ 
+postfix_expression ::=   primary_expression 
+ 	{TK_OPENBR expression TK_CLOSEBR 
+ 	| TK_OPENPA TK_CLOSEPA
+ 	| TK_OPENP Aargument_expression_list TK_CLOSEPA
+ 	| TK_DOT IDENTIFIER 
+ 	| TK_POINTSTO IDENTIFIER}
+
+primary_expression ::= IDENTIFIER
+    | TK_BOOL
+    | TK_FLOAT
+ 	| TK_CINT
+ 	| TK_CSTR
+ 	| TK_CCHAR
+ 	| TK_OPENPA expression TK_CLOSEPA
+
+argument_expression_list  ::= assignment_expression	{TK_COMMA assignment_expression}
